@@ -2,98 +2,83 @@ package main
 
 import (
 	"fmt"
-	"log"
 	"os"
 
+	"github.com/Azure/azure-sdk-for-go/arm/examples/helpers"
+	"github.com/Azure/azure-sdk-for-go/arm/resources/resources"
+	"github.com/Azure/go-autorest/autorest"
+	"github.com/Azure/go-autorest/autorest/adal"
 	"github.com/Azure/go-autorest/autorest/azure"
-	"github.com/go-resty/resty"
-	"github.com/matyix/artisan-aks-client/utils"
 )
 
+type Sdk struct {
+	ServicePrincipal *ServicePrincipal
+	ResourceGroup    *resources.GroupsClient
+}
+
+type ServicePrincipal struct {
+	ClientID           string
+	ClientSecret       string
+	SubscriptionID     string
+	TenantId           string
+	HashMap            map[string]string
+	AuthenticatedToken *adal.ServicePrincipalToken
+}
+
 func main() {
-	resourceGroup := "BanzaiCloud"
-	resourceName := "TestClster"
-
-	c := map[string]string{
-		"AZURE_CLIENT_ID":       os.Getenv("AZURE_CLIENT_ID"),
-		"AZURE_CLIENT_SECRET":   os.Getenv("AZURE_CLIENT_SECRET"),
-		"AZURE_SUBSCRIPTION_ID": os.Getenv("AZURE_SUBSCRIPTION_ID"),
-		"AZURE_TENANT_ID":       os.Getenv("AZURE_TENANT_ID")}
-	if err := checkEnvVar(&c); err != nil {
-		log.Fatalf("Error: %v", err)
+	clientID := os.Getenv("AZURE_CLIENT_ID")
+	if clientID == "" {
+		fmt.Errorf("Empty $AZURE_CLIENT_ID")
 		return
 	}
-	spt, err := utils.NewServicePrincipalTokenFromCredentials(c, azure.PublicCloud.ResourceManagerEndpoint)
+	clientSecret := os.Getenv("AZURE_CLIENT_SECRET")
+	if clientSecret == "" {
+		fmt.Errorf("Empty $AZURE_CLIENT_SECRET")
+		return
+	}
+	subscriptionID := os.Getenv("AZURE_SUBSCRIPTION_ID")
+	if subscriptionID == "" {
+		fmt.Errorf("Empty $AZURE_SUBSCRIPTION_ID")
+		return
+	}
+	tenantID := os.Getenv("AZURE_TENANT_ID")
+	if tenantID == "" {
+
+		return
+	}
+
+	sdk := &Sdk{
+		ServicePrincipal: &ServicePrincipal{
+			ClientID:       clientID,
+			ClientSecret:   clientSecret,
+			SubscriptionID: subscriptionID,
+			TenantId:       tenantID,
+			HashMap: map[string]string{
+				"AZURE_CLIENT_ID":       clientID,
+				"AZURE_CLIENT_SECRET":   clientSecret,
+				"AZURE_SUBSCRIPTION_ID": subscriptionID,
+				"AZURE_TENANT_ID":       tenantID,
+			},
+		},
+	}
+
+	authenticatedToken, err := helpers.NewServicePrincipalTokenFromCredentials(sdk.ServicePrincipal.HashMap, azure.PublicCloud.ResourceManagerEndpoint)
 	if err != nil {
-		log.Fatalf("Error: %v", err)
+		fmt.Errorf("Token %#v", authenticatedToken)
 		return
 	}
 
-	//GET
-	//List clusters - GET https://management.azure.com/subscriptions/
-	// {subscriptionId}/resourceGroups/
-	// {resourceGroupName}/providers/Microsoft.ContainerService/managedClusters?
-	// api-version=2017-08-31
+	fmt.Printf("Token %#v", authenticatedToken.Token)
+	sdk.ServicePrincipal.AuthenticatedToken = authenticatedToken
 
-	resp, err := resty.R().
-		SetQueryParams(map[string]string{
-			"api-version": "2017-08-31",
-		}).
-		SetHeader("Accept", "application/json").
-		SetAuthToken(spt.Token.AccessToken).
-		Get("https://management.azure.com/subscriptions/" +
-			c["AZURE_SUBSCRIPTION_ID"] +
-			"/resourceGroups/rg1/providers/Microsoft.ContainerService/managedClusters")
+	resourceGroup := resources.NewGroupsClient(sdk.ServicePrincipal.SubscriptionID)
+	resourceGroup.Authorizer = autorest.NewBearerAuthorizer(sdk.ServicePrincipal.AuthenticatedToken)
+	sdk.ResourceGroup = &resourceGroup
 
-	printOutput(resp, err)
+	fmt.Printf("Resource Group: %v#", sdk.ResourceGroup)
 
-	type ManagedClusterProperties struct {
-		accessProfiles    string
-		fqdn              string
-		kubernetesVersion string
-		provisioningState string
-	}
+	location := "eastus"
+	sdk.ResourceGroup.CreateOrUpdate("myRG1", resources.Group{Location: &location})
 
-	type Error struct {
-		/* variables */
-	}
-	//PUT
-	//Create cluster - PUT https://management.azure.com/subscriptions/
-	// {subscriptionId}/resourceGroups/
-	// {resourceGroupName}/providers/Microsoft.ContainerService/managedClusters/{resourceName}?
-	// api-version=2017-08-31
-	resp, err = resty.R().
-		SetQueryParams(map[string]string{
-			"api-version": "2017-08-31",
-		}).
-		SetBody(ManagedClusterProperties{
-			fqdn:              "banzai.com",
-			kubernetesVersion: "1.8.3",
-			accessProfiles:    "access",
-			provisioningState: "state"}).
-		SetAuthToken(spt.Token.AccessToken).
-		SetError(&Error{}). // or SetError(Error{}).
-		Put("https://management.azure.com/subscriptions/" + c["AZURE_SUBSCRIPTION_ID"] +
-			"/resourceGroups/" + resourceGroup +
-			"/providers/Microsoft.ContainerService/managedClusters/" + resourceName)
-
-	printOutput(resp, err)
-
-}
-
-func printOutput(resp *resty.Response, err error) {
-	fmt.Println(resp, err)
-}
-
-func checkEnvVar(envVars *map[string]string) error {
-	var missingVars []string
-	for varName, value := range *envVars {
-		if value == "" {
-			missingVars = append(missingVars, varName)
-		}
-	}
-	if len(missingVars) > 0 {
-		return fmt.Errorf("Missing environment variables %v", missingVars)
-	}
-	return nil
+	return
 }

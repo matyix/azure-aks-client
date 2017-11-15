@@ -2,8 +2,14 @@
 
 
 [[projects]]
+  name = "github.com/Azure/azure-sdk-for-go"
+  packages = ["arm/examples/helpers","arm/resources/resources"]
+  revision = "7692b0cef22674113fcf71cc17ac3ccc1a7fef48"
+  version = "v11.2.2-beta"
+
+[[projects]]
   name = "github.com/Azure/go-autorest"
-  packages = ["autorest","autorest/adal","autorest/azure","autorest/date"]
+  packages = ["autorest","autorest/adal","autorest/azure","autorest/date","autorest/to","autorest/validation"]
   revision = "ab5671379918d9af294b6f0e3d8aaa98c829416d"
   version = "v9.4.0"
 
@@ -13,27 +19,9 @@
   revision = "dbeaa9332f19a944acb5736b4456cfcc02140e29"
   version = "v3.1.0"
 
-[[projects]]
-  name = "github.com/go-resty/resty"
-  packages = ["."]
-  revision = "9ac9c42358f7c3c69ac9f8610e8790d7c338e85d"
-  version = "v1.0"
-
-[[projects]]
-  branch = "master"
-  name = "golang.org/x/net"
-  packages = ["idna","publicsuffix"]
-  revision = "a337091b0525af65de94df2eb7e98bd9962dcbe2"
-
-[[projects]]
-  branch = "master"
-  name = "golang.org/x/text"
-  packages = ["collate","collate/build","internal/colltab","internal/gen","internal/tag","internal/triegen","internal/ucd","language","secure/bidirule","transform","unicode/bidi","unicode/cldr","unicode/norm","unicode/rangetable"]
-  revision = "88f656faf3f37f690df1a32515b479415e1a6769"
-
 [solve-meta]
   analyzer-name = "dep"
   analyzer-version = 1
-  inputs-digest = "e331c467e6fc49b53709fd0a85cc0abb0d06b54fac1995b8b29926ad5f02a7d7"
+  inputs-digest = "49e9ab82f6ef7b38820cebc5f2162d01852c6748eb79ce08503b5b425be0c134"
   solver-name = "gps-cdcl"
   solver-version = 1
