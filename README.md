@@ -1,14 +1,11 @@
 ### AKS client until Swagger/SDK is released
 
-This is a temporary solution until the following PR' are not merged upstream.
+This is a library to create Microsoft Managed Kubernetes clusters (**AKS**) on Azure cloud. it is a temporary solution until the following PR's are not merged upstream.
 
-**For API Specification**: Go client is missing AKS until this [PR](https://github.com/Azure/azure-rest-api-specs/pull/1956) is merged in the API specification.
-Related [PR](https://github.com/Azure/azure-rest-api-specs/pull/1912) superseeded by the previos one.
+_**For API Specification**: Go client is missing AKS until this [PR](https://github.com/Azure/azure-rest-api-specs/pull/1956) is merged in the API specification.
+Related [PR](https://github.com/Azure/azure-rest-api-specs/pull/1912) superseeded by the previos one._
 
-
-**For API Go client**: The API itself is lacking the AKS feature until this [issue](https://github.com/Azure/azure-sdk-for-go/issues/847) is fixed.
-
-This is a library to create Microsoft Managed Kubernetes clusters (**AKS**) on Azure cloud.
+_**For API Go client**: The API itself is lacking the AKS feature until this [issue](https://github.com/Azure/azure-sdk-for-go/issues/847) is fixed._
 
 #### Prerequisities 
 
@@ -74,3 +71,10 @@ export AZURE_TENANT_ID = "1234567-1234-1234-1234567890ab"
 export AZURE_SUBSCRIPTION_ID = "1234567-1234-1234-1234567890ab"
 ```
 
+#### Limitations
+
+Currently all operations are under one hardcoded resource group, `rg1` as in this [example](https://github.com/matyix/azure-aks-client/blob/master/client/aks.go#L34). 
+
+#### Tooling
+
+In order to generate structs from the rest response you can use this [site](https://mholt.github.io/json-to-go/) as the AKS API response is quite complex.
