@@ -19,9 +19,15 @@
   revision = "dbeaa9332f19a944acb5736b4456cfcc02140e29"
   version = "v3.1.0"
 
+[[projects]]
+  branch = "master"
+  name = "github.com/matyix/azure-aks-client"
+  packages = ["client"]
+  revision = "af1db66822a1fa5a7437ed006b5c3d03b533b80b"
+
 [solve-meta]
   analyzer-name = "dep"
   analyzer-version = 1
-  inputs-digest = "49e9ab82f6ef7b38820cebc5f2162d01852c6748eb79ce08503b5b425be0c134"
+  inputs-digest = "88de004758731148b151369bfde79777b788d03f438e89c278f295af5471243d"
   solver-name = "gps-cdcl"
   solver-version = 1
