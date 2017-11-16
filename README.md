@@ -70,3 +70,11 @@ export AZURE_CLIENT_SECRET = "1234567-1234-1234-1234567890ab"
 export AZURE_TENANT_ID = "1234567-1234-1234-1234567890ab"
 export AZURE_SUBSCRIPTION_ID = "1234567-1234-1234-1234567890ab"
 ```
+
+#### Limitations
+
+Currently all operations are under one hardcoded resource group, `rg1` as in this [example](https://github.com/matyix/azure-aks-client/blob/master/client/aks.go#L34). 
+
+#### Tooling
+
+In order to generate structs from the rest response you can use this [site](https://mholt.github.io/json-to-go/) as the AKS API response is quite complex.
