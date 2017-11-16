@@ -1,17 +1,14 @@
-### AKS hack until Swagger is released
+### AKS client until Swagger/SDK is released
 
 This is a temporary solution until the following PR' are not merged upstream.
 
-#### API Spec
-
-Go client is missing AKS until this [PR](https://github.com/Azure/azure-rest-api-specs/pull/1956) is merged in the API specification.
+**For API Specification**: Go client is missing AKS until this [PR](https://github.com/Azure/azure-rest-api-specs/pull/1956) is merged in the API specification.
 Related [PR](https://github.com/Azure/azure-rest-api-specs/pull/1912) superseeded by the previos one.
 
 
-#### API Go client 
+**For API Go client**: The API itself is lacking the AKS feature until this [issue](https://github.com/Azure/azure-sdk-for-go/issues/847) is fixed.
 
-For the API itself this is the [PR](https://github.com/Azure/azure-sdk-for-go/issues/847) to watch.
-
+This is a library to create Microsoft Managed Kubernetes clusters (**AKS**) on Azure cloud.
 
 #### Prerequisities 
 
