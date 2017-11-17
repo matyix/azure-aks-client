@@ -71,6 +71,31 @@ export AZURE_TENANT_ID = "1234567-1234-1234-1234567890ab"
 export AZURE_SUBSCRIPTION_ID = "1234567-1234-1234-1234567890ab"
 ```
 
+#### Preconditions
+
+AKS requires a few services to be pre-registred for the subscription. You can add this thorugh the portal or using the CLI.
+The required pre-registered service providers are: 
+
+```
+Microsoft.Compute
+Microsoft.Storage
+Microsoft.Network
+Microsoft.ContainerService
+```
+You can check the registered providers with: `az provider list --query "[].{Provider:namespace, Status:registrationState}" --out table`
+
+If these above are not registered you can add them: 
+
+```
+az provider register --namespace Microsoft.ContainerService
+az provider register --namespace Microsoft.Compute
+az provider register --namespace Microsoft.Storage
+az provider register --namespace Microsoft.Network
+```
+
+Until the registration goes through all the zones and datacenters have a coffee. You can check the status by hitting `az provider show -n Microsoft.ContainerService` for each individual service.
+
+
 #### Limitations
 
 Currently all operations are under one hardcoded resource group, `rg1` as in this [example](https://github.com/matyix/azure-aks-client/blob/master/client/aks.go#L34). 
