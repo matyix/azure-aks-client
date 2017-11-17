@@ -7,6 +7,7 @@ import (
 
 func main() {
 
-	azure.ListClusters(azure.Authenticate(), os.Getenv("AZURE_SUBSCRIPTION_ID"))
+	//azure.ListClusters(azure.Authenticate(), os.Getenv("AZURE_SUBSCRIPTION_ID"))
+	azure.CreateCluster(azure.Authenticate(), os.Getenv("AZURE_SUBSCRIPTION_ID"), "AK-47-S")
 
 }
