@@ -96,6 +96,20 @@ az provider register --namespace Microsoft.Network
 Until the registration goes through all the zones and datacenters have a coffee. You can check the status by hitting `az provider show -n Microsoft.ContainerService` for each individual service.
 
 
+#### Validate, test the cluster
+
+Install the AKS CLI tool by running `az aks install-cli`. Get the credentials to the cluster by running `az aks get-credentials --resource-group rg1 --name AKS_CLUSTER_NAME`.
+
+You can now use **kubectl* to operate the cluster. Get the number of nodes and validate the result: 
+
+```
+matyix$ kubectl get nodes
+NAME                        STATUS    ROLES     AGE       VERSION
+aks-agentpool1-36552431-0   Ready     agent     12m       v1.7.7
+```
+
+Scale the cluster: `az aks scale --name AKS_CLUSTER_NAME --resource-group rg1 --node-count 1 --resource-group`
+
 #### Limitations
 
 Currently all operations are under one hardcoded resource group, `rg1` as in this [example](https://github.com/matyix/azure-aks-client/blob/master/client/aks.go#L34). 

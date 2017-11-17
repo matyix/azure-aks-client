@@ -106,7 +106,7 @@ func CreateCluster(groupClient *resources.GroupsClient, subscriptionId, name str
 				Secret:   &clientSecret,
 			},
 			LinuxProfile: containerservice.LinuxProfile{
-				AdminUsername: S("admin"),
+				AdminUsername: S("faszacsavo123"),
 				SSH: &containerservice.SSHConfiguration{
 					PublicKeys: &[]containerservice.SSHPublicKey{
 						{
