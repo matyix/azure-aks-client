@@ -108,7 +108,7 @@ NAME                        STATUS    ROLES     AGE       VERSION
 aks-agentpool1-36552431-0   Ready     agent     12m       v1.7.7
 ```
 
-Scale the cluster: `az aks scale --name AKS_CLUSTER_NAME --resource-group rg1 --node-count 1 --resource-group`
+Scale the cluster: `az aks scale --name AKS_CLUSTER_NAME --resource-group rg1 --node-count 1 --resource-group rg1`
 
 #### Limitations
 
