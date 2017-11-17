@@ -3,6 +3,8 @@ package utils
 import (
 	"encoding/json"
 	"fmt"
+	"io/ioutil"
+	"os"
 
 	"github.com/Azure/go-autorest/autorest/adal"
 	"github.com/Azure/go-autorest/autorest/azure"
@@ -47,4 +49,25 @@ func ensureValueString(value interface{}) string {
 	default:
 		return fmt.Sprintf("%v", v)
 	}
+}
+
+func ReadPubRSA(filename string) string {
+	b, err := ioutil.ReadFile(os.Getenv("HOME") + "/.ssh/" + filename)
+	if err != nil {
+		fmt.Print(err)
+	}
+	return string(b)
+}
+
+func CheckEnvVar(envVars *map[string]string) error {
+	var missingVars []string
+	for varName, value := range *envVars {
+		if value == "" {
+			missingVars = append(missingVars, varName)
+		}
+	}
+	if len(missingVars) > 0 {
+		return fmt.Errorf("Missing environment variables %v", missingVars)
+	}
+	return nil
 }
