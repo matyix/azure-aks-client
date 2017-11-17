@@ -78,11 +78,6 @@ PUT https://management.azure.com/subscriptions/
 	{resourceGroupName}/providers/Microsoft.ContainerService/managedClusters/{resourceName}?
 	api-version=2017-08-31
 */
-
-func S(input string) *string {
-	s := input
-	return &s
-}
 func CreateCluster(groupClient *resources.GroupsClient, subscriptionId, name string) {
 
 	pathParam := map[string]interface{}{"subscription-id": subscriptionId, "resourceName": name}
@@ -106,7 +101,7 @@ func CreateCluster(groupClient *resources.GroupsClient, subscriptionId, name str
 				Secret:   &clientSecret,
 			},
 			LinuxProfile: containerservice.LinuxProfile{
-				AdminUsername: S("admin"),
+				AdminUsername: S("faszacsavo123"),
 				SSH: &containerservice.SSHConfiguration{
 					PublicKeys: &[]containerservice.SSHPublicKey{
 						{
@@ -151,6 +146,52 @@ func CreateCluster(groupClient *resources.GroupsClient, subscriptionId, name str
 	value, err := ioutil.ReadAll(resp.Body)
 	fmt.Printf("%#v", string(value))
 
+}
+
+/*
+DeleteCluster deletes a managed AKS on Azure
+DELETE https://management.azure.com/subscriptions/
+	{subscriptionId}/resourceGroups/
+	{resourceGroupName}/providers/Microsoft.ContainerService/managedClusters/{resourceName}?
+	api-version=2017-08-31
+*/
+func DeleteCluster(groupClient *resources.GroupsClient, subscriptionId string, name string) {
+
+	pathParam := map[string]interface{}{"subscription-id": subscriptionId, "resourceName": name}
+	queryParam := map[string]interface{}{"api-version": "2017-08-31"}
+
+	req, _ := autorest.Prepare(&http.Request{},
+		groupClient.WithAuthorization(),
+		autorest.AsDelete(),
+		autorest.WithBaseURL("https://management.azure.com"),
+		autorest.WithPathParameters("/subscriptions/{subscription-id}/resourceGroups/rg1/providers/Microsoft.ContainerService/managedClusters/{resourceName}", pathParam),
+		autorest.WithQueryParameters(queryParam),
+	)
+
+	resp, err := autorest.SendWithSender(groupClient.Client, req)
+
+	fmt.Printf("Resp status : %#v\n", resp.StatusCode)
+	value, err := ioutil.ReadAll(resp.Body)
+	fmt.Printf("ListResponse: %#v\n", string(value))
+
+	respListInGR := ListInRG{}
+	defer resp.Body.Close()
+	dec := json.NewDecoder(resp.Body)
+	err = dec.Decode(&respListInGR)
+	if err != nil {
+		fmt.Errorf("Decode %#v", err)
+		return
+	}
+
+	fmt.Printf("List in RG : %#v", &respListInGR)
+
+	fmt.Printf("Resp status : %#v\n", resp.StatusCode)
+
+}
+
+func S(input string) *string {
+	s := input
+	return &s
 }
 
 type ListInRG struct {
