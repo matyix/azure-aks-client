@@ -6,6 +6,7 @@ import (
 	"github.com/Azure/azure-sdk-for-go/arm/containerservice"
 	"github.com/Azure/azure-sdk-for-go/arm/resources/resources"
 	"github.com/Azure/go-autorest/autorest"
+	"github.com/matyix/azure-aks-client/utils"
 	"io/ioutil"
 	"net/http"
 	"os"
@@ -109,7 +110,7 @@ func CreateCluster(groupClient *resources.GroupsClient, subscriptionId, name str
 				SSH: &containerservice.SSHConfiguration{
 					PublicKeys: &[]containerservice.SSHPublicKey{
 						{
-							KeyData: S(""),
+							KeyData: S(utils.ReadPubRSA("id_rsa.pub")),
 						},
 					},
 				},

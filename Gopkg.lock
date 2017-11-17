@@ -3,7 +3,7 @@
 
 [[projects]]
   name = "github.com/Azure/azure-sdk-for-go"
-  packages = ["arm/examples/helpers","arm/resources/resources"]
+  packages = ["arm/containerservice","arm/examples/helpers","arm/resources/resources"]
   revision = "7692b0cef22674113fcf71cc17ac3ccc1a7fef48"
   version = "v11.2.2-beta"
 
@@ -19,15 +19,9 @@
   revision = "dbeaa9332f19a944acb5736b4456cfcc02140e29"
   version = "v3.1.0"
 
-[[projects]]
-  branch = "master"
-  name = "github.com/matyix/azure-aks-client"
-  packages = ["client"]
-  revision = "af1db66822a1fa5a7437ed006b5c3d03b533b80b"
-
 [solve-meta]
   analyzer-name = "dep"
   analyzer-version = 1
-  inputs-digest = "88de004758731148b151369bfde79777b788d03f438e89c278f295af5471243d"
+  inputs-digest = "824ff8079fa8693a638960d56e561a8dd5e68d667969bb9c7dfd8a6ad2acaadf"
   solver-name = "gps-cdcl"
   solver-version = 1

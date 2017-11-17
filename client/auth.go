@@ -9,6 +9,7 @@ import (
 	"github.com/Azure/go-autorest/autorest"
 	"github.com/Azure/go-autorest/autorest/adal"
 	"github.com/Azure/go-autorest/autorest/azure"
+	"github.com/matyix/azure-aks-client/utils"
 )
 
 type Sdk struct {
@@ -46,7 +47,7 @@ func Authenticate() *resources.GroupsClient {
 		},
 	}
 
-	if err := checkEnvVar(&sdk.ServicePrincipal.HashMap); err != nil {
+	if err := utils.CheckEnvVar((&sdk.ServicePrincipal.HashMap)); err != nil {
 		fmt.Errorf("Error: %v", err)
 		return nil
 	}
@@ -67,17 +68,4 @@ func Authenticate() *resources.GroupsClient {
 
 	return sdk.ResourceGroup
 
-}
-
-func checkEnvVar(envVars *map[string]string) error {
-	var missingVars []string
-	for varName, value := range *envVars {
-		if value == "" {
-			missingVars = append(missingVars, varName)
-		}
-	}
-	if len(missingVars) > 0 {
-		return fmt.Errorf("Missing environment variables %v", missingVars)
-	}
-	return nil
 }
