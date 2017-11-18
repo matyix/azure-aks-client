@@ -17,6 +17,8 @@ func init() {
 	log.SetFormatter(&log.JSONFormatter{})
 	log.SetOutput(os.Stdout)
 	log.SetLevel(log.InfoLevel)
+
+	sdk = *GetSdk()
 }
 
 type AgentPoolProfiles struct {
@@ -40,6 +42,7 @@ type CreateRequest struct {
 
 type ClusterDetails struct {
 	Name          string
+	ResourceGroup string
 	Location      string
 	VMSize        string
 	DNSPrefix     string
@@ -54,16 +57,18 @@ GET https://management.azure.com/subscriptions/
 	{resourceGroupName}/providers/Microsoft.ContainerService/managedClusters?
 	api-version=2017-08-31
 */
-func ListClusters(groupClient *resources.GroupsClient, subscriptionId string) {
+func ListClusters(groupClient *resources.GroupsClient, clusterDetails ClusterDetails) {
 
-	pathParam := map[string]interface{}{"subscription-id": subscriptionId}
+	pathParam := map[string]interface{}{
+		"subscription-id": sdk.ServicePrincipal.SubscriptionID,
+		"resourceGroup":   clusterDetails.ResourceGroup}
 	queryParam := map[string]interface{}{"api-version": "2017-08-31"}
 
 	req, _ := autorest.Prepare(&http.Request{},
 		groupClient.WithAuthorization(),
 		autorest.AsGet(),
 		autorest.WithBaseURL("https://management.azure.com"),
-		autorest.WithPathParameters("/subscriptions/{subscription-id}/resourceGroups/rg1/providers/Microsoft.ContainerService/managedClusters", pathParam),
+		autorest.WithPathParameters("/subscriptions/{subscription-id}/resourceGroups/{resourceGroup}/providers/Microsoft.ContainerService/managedClusters", pathParam),
 		autorest.WithQueryParameters(queryParam))
 
 	resp, err := autorest.SendWithSender(groupClient.Client, req)
@@ -106,9 +111,10 @@ PUT https://management.azure.com/subscriptions/
 */
 func CreateCluster(groupClient *resources.GroupsClient, clusterDetails ClusterDetails) {
 
-	sdk := GetSdk()
-
-	pathParam := map[string]interface{}{"subscription-id": sdk.ServicePrincipal.SubscriptionID, "resourceName": clusterDetails.Name}
+	pathParam := map[string]interface{}{
+		"subscription-id": sdk.ServicePrincipal.SubscriptionID,
+		"resourceGroup":   clusterDetails.ResourceGroup,
+		"resourceName":    clusterDetails.Name}
 	queryParam := map[string]interface{}{"api-version": "2017-08-31"}
 
 	clientId := sdk.ServicePrincipal.ClientID
@@ -150,20 +156,21 @@ func CreateCluster(groupClient *resources.GroupsClient, clusterDetails ClusterDe
 		groupClient.WithAuthorization(),
 		autorest.AsPut(),
 		autorest.WithBaseURL("https://management.azure.com"),
-		autorest.WithPathParameters("/subscriptions/{subscription-id}/resourceGroups/rg1/providers/Microsoft.ContainerService/managedClusters/{resourceName}", pathParam),
+		autorest.WithPathParameters("/subscriptions/{subscription-id}/resourceGroups/{resourceGroup}/providers/Microsoft.ContainerService/managedClusters/{resourceName}", pathParam),
 		autorest.WithQueryParameters(queryParam),
 		autorest.WithJSON(createRequest),
 		autorest.AsContentType("application/json"),
 	)
 
-	val, err := json.Marshal(createRequest)
+	//val, err := json.Marshal(createRequest)
+	_, err := json.Marshal(createRequest)
 	if err != nil {
 		log.WithFields(log.Fields{
 			"error": err,
 		}).Error("error during JSON marshal ")
 		return
 	}
-	log.Info("JSON body ", val)
+	//log.Info("JSON body ", val)
 
 	resp, err := autorest.SendWithSender(groupClient.Client, req)
 	if err != nil {
@@ -195,16 +202,19 @@ DELETE https://management.azure.com/subscriptions/
 	{resourceGroupName}/providers/Microsoft.ContainerService/managedClusters/{resourceName}?
 	api-version=2017-08-31
 */
-func DeleteCluster(groupClient *resources.GroupsClient, subscriptionId string, name string) {
+func DeleteCluster(groupClient *resources.GroupsClient, clusterDetails ClusterDetails) {
 
-	pathParam := map[string]interface{}{"subscription-id": subscriptionId, "resourceName": name}
+	pathParam := map[string]interface{}{
+		"subscription-id": sdk.ServicePrincipal.SubscriptionID,
+		"resourceGroup":   clusterDetails.ResourceGroup,
+		"resourceName":    clusterDetails.Name}
 	queryParam := map[string]interface{}{"api-version": "2017-08-31"}
 
 	req, _ := autorest.Prepare(&http.Request{},
 		groupClient.WithAuthorization(),
 		autorest.AsDelete(),
 		autorest.WithBaseURL("https://management.azure.com"),
-		autorest.WithPathParameters("/subscriptions/{subscription-id}/resourceGroups/rg1/providers/Microsoft.ContainerService/managedClusters/{resourceName}", pathParam),
+		autorest.WithPathParameters("/subscriptions/{subscription-id}/resourceGroups/{resourceGroup}/providers/Microsoft.ContainerService/managedClusters/{resourceName}", pathParam),
 		autorest.WithQueryParameters(queryParam),
 	)
 
