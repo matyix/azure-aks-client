@@ -110,9 +110,6 @@ aks-agentpool1-36552431-0   Ready     agent     12m       v1.7.7
 
 Scale the cluster: `az aks scale --name AKS_CLUSTER_NAME --resource-group rg1 --node-count 1 --resource-group rg1`
 
-#### Limitations
-
-Currently all operations are under one hardcoded resource group, `rg1` as in this [example](https://github.com/matyix/azure-aks-client/blob/master/client/aks.go#L34). 
 
 #### Tooling
 
