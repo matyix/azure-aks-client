@@ -1,6 +1,6 @@
 ### AKS client until Swagger/SDK is released
 
-This is a library to create Microsoft Managed Kubernetes clusters (**AKS**) on Azure cloud. it is a temporary solution until the following PR's are not merged upstream.
+This is a library to create Microsoft Managed Kubernetes clusters (**AKS**) on Azure cloud. It is a **temporary** solution until the following PR's are not merged upstream.
 
 _**For API Specification**: Go client is missing AKS until this [PR](https://github.com/Azure/azure-rest-api-specs/pull/1956) is merged in the API specification.
 Related [PR](https://github.com/Azure/azure-rest-api-specs/pull/1912) superseeded by the previos one._
