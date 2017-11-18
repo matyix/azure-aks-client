@@ -2,15 +2,22 @@ package client
 
 import (
 	"encoding/json"
-	"fmt"
 	"github.com/Azure/azure-sdk-for-go/arm/containerservice"
 	"github.com/Azure/azure-sdk-for-go/arm/resources/resources"
 	"github.com/Azure/go-autorest/autorest"
 	"github.com/matyix/azure-aks-client/utils"
+	log "github.com/sirupsen/logrus"
 	"io/ioutil"
 	"net/http"
 	"os"
 )
+
+func init() {
+	// Log as JSON
+	log.SetFormatter(&log.JSONFormatter{})
+	log.SetOutput(os.Stdout)
+	log.SetLevel(log.InfoLevel)
+}
 
 type AgentPoolProfiles struct {
 	Count  int    `json:"count"`
@@ -26,9 +33,18 @@ type ClusterProperties struct {
 	ServicePrincipalProfile containerservice.ServicePrincipalProfile `json:"servicePrincipalProfile"`
 }
 
-type CreateRequestBody struct {
+type CreateRequest struct {
 	Location   string            `json:"location"`
 	Properties ClusterProperties `json:"properties"`
+}
+
+type ClusterDetails struct {
+	Name          string
+	Location      string
+	VMSize        string
+	DNSPrefix     string
+	AdminUsername string
+	PubKeyName    string
 }
 
 /*
@@ -52,22 +68,32 @@ func ListClusters(groupClient *resources.GroupsClient, subscriptionId string) {
 
 	resp, err := autorest.SendWithSender(groupClient.Client, req)
 
-	fmt.Printf("Resp status : %#v\n", resp.StatusCode)
+	log.Info("REST call response status %#v", resp.StatusCode)
 	value, err := ioutil.ReadAll(resp.Body)
-	fmt.Printf("ListResponse: %#v\n", string(value))
+	log.Info("Cluster list response", string(value))
+
+	if err != nil {
+		log.WithFields(log.Fields{
+			"error": err,
+		}).Error("error during cluster list call ")
+		return
+	}
 
 	respListInGR := ListInRG{}
 	defer resp.Body.Close()
 	dec := json.NewDecoder(resp.Body)
 	err = dec.Decode(&respListInGR)
-	if err != nil {
-		fmt.Errorf("Decode %#v", err)
-		return
-	}
+	/*
+		if err != nil {
+			log.WithFields(log.Fields{
+				"error": err,
+			}).Error("error during cluster list decode ")
+			return
+		}
+	*/
 
-	fmt.Printf("List in RG : %#v", &respListInGR)
-
-	fmt.Printf("Resp status : %#v\n", resp.StatusCode)
+	log.Info("List cluster call response status", resp.StatusCode)
+	log.Info("Cluster list in the resource group", &respListInGR)
 
 }
 
@@ -78,21 +104,25 @@ PUT https://management.azure.com/subscriptions/
 	{resourceGroupName}/providers/Microsoft.ContainerService/managedClusters/{resourceName}?
 	api-version=2017-08-31
 */
-func CreateCluster(groupClient *resources.GroupsClient, subscriptionId, name string) {
+func CreateCluster(groupClient *resources.GroupsClient, clusterDetails ClusterDetails) {
 
-	pathParam := map[string]interface{}{"subscription-id": subscriptionId, "resourceName": name}
+	sdk := GetSdk()
+
+	pathParam := map[string]interface{}{"subscription-id": sdk.ServicePrincipal.SubscriptionID, "resourceName": clusterDetails.Name}
 	queryParam := map[string]interface{}{"api-version": "2017-08-31"}
-	clientId := os.Getenv("AZURE_CLIENT_ID")
-	clientSecret := os.Getenv("AZURE_CLIENT_SECRET")
-	createRequest := CreateRequestBody{
-		Location: "eastus",
+
+	clientId := sdk.ServicePrincipal.ClientID
+	clientSecret := sdk.ServicePrincipal.ClientSecret
+
+	createRequest := CreateRequest{
+		Location: clusterDetails.Location,
 		Properties: ClusterProperties{
-			DNSPrefix: "dnsprefix1",
+			DNSPrefix: clusterDetails.DNSPrefix,
 			AgentPoolProfiles: []AgentPoolProfiles{
 				{
 					Count:  1,
 					Name:   "agentpool1",
-					VMSize: "Standard_D2_v2",
+					VMSize: clusterDetails.VMSize,
 				},
 			},
 			KubernetesVersion: "1.7.7",
@@ -101,11 +131,11 @@ func CreateCluster(groupClient *resources.GroupsClient, subscriptionId, name str
 				Secret:   &clientSecret,
 			},
 			LinuxProfile: containerservice.LinuxProfile{
-				AdminUsername: S("faszacsavo123"),
+				AdminUsername: S(clusterDetails.AdminUsername),
 				SSH: &containerservice.SSHConfiguration{
 					PublicKeys: &[]containerservice.SSHPublicKey{
 						{
-							KeyData: S(utils.ReadPubRSA("id_rsa.pub")),
+							KeyData: S(utils.ReadPubRSA(clusterDetails.PubKeyName)),
 						},
 					},
 				},
@@ -128,23 +158,33 @@ func CreateCluster(groupClient *resources.GroupsClient, subscriptionId, name str
 
 	val, err := json.Marshal(createRequest)
 	if err != nil {
-		fmt.Print(err)
+		log.WithFields(log.Fields{
+			"error": err,
+		}).Error("error during JSON marshal ")
+		return
 	}
-	fmt.Printf("JSONbody: %s", val)
+	log.Info("JSON body ", val)
 
 	resp, err := autorest.SendWithSender(groupClient.Client, req)
-
-	defer resp.Body.Close()
-	//dec := json.NewDecoder(resp.Body)
-	//err = dec.Decode(&ListInRG{})
 	if err != nil {
-		fmt.Errorf("Decode %#v", err)
+		log.WithFields(log.Fields{
+			"error": err,
+		}).Error("error during cluster create call ")
 		return
 	}
 
-	fmt.Printf("Resp status : %#v", resp.StatusCode)
+	defer resp.Body.Close()
 	value, err := ioutil.ReadAll(resp.Body)
-	fmt.Printf("%#v", string(value))
+	/*
+		if err != nil {
+			log.WithFields(log.Fields{
+				"error": err,
+			}).Error("error during cluster create decode ")
+			return
+		}
+	*/
+	log.Info("Cluster create call response status", resp.StatusCode)
+	log.Info("Cluster create response", string(value))
 
 }
 
@@ -169,23 +209,30 @@ func DeleteCluster(groupClient *resources.GroupsClient, subscriptionId string, n
 	)
 
 	resp, err := autorest.SendWithSender(groupClient.Client, req)
+	if err != nil {
+		log.WithFields(log.Fields{
+			"error": err,
+		}).Error("error during cluster delete call ")
+		return
+	}
 
-	fmt.Printf("Resp status : %#v\n", resp.StatusCode)
+	log.Info("Delete cluster call response status", resp.StatusCode)
 	value, err := ioutil.ReadAll(resp.Body)
-	fmt.Printf("ListResponse: %#v\n", string(value))
+	log.Info("delete cluster response", string(value))
 
 	respListInGR := ListInRG{}
 	defer resp.Body.Close()
 	dec := json.NewDecoder(resp.Body)
 	err = dec.Decode(&respListInGR)
-	if err != nil {
-		fmt.Errorf("Decode %#v", err)
-		return
-	}
-
-	fmt.Printf("List in RG : %#v", &respListInGR)
-
-	fmt.Printf("Resp status : %#v\n", resp.StatusCode)
+	/*
+		if err != nil {
+			log.WithFields(log.Fields{
+				"error": err,
+			}).Error("error during cluster delete decode ")
+			return
+		}
+	*/
+	log.Info("Delete cluster call response status", resp.StatusCode)
 
 }
 

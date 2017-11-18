@@ -1,7 +1,6 @@
 package client
 
 import (
-	"fmt"
 	"os"
 
 	"github.com/Azure/azure-sdk-for-go/arm/examples/helpers"
@@ -10,6 +9,7 @@ import (
 	"github.com/Azure/go-autorest/autorest/adal"
 	"github.com/Azure/go-autorest/autorest/azure"
 	"github.com/matyix/azure-aks-client/utils"
+	log "github.com/sirupsen/logrus"
 )
 
 type Sdk struct {
@@ -26,13 +26,22 @@ type ServicePrincipal struct {
 	AuthenticatedToken *adal.ServicePrincipalToken
 }
 
+var sdk Sdk
+
+func init() {
+	// Log as JSON
+	log.SetFormatter(&log.JSONFormatter{})
+	log.SetOutput(os.Stdout)
+	log.SetLevel(log.InfoLevel)
+}
+
 func Authenticate() *resources.GroupsClient {
 	clientId := os.Getenv("AZURE_CLIENT_ID")
 	clientSecret := os.Getenv("AZURE_CLIENT_SECRET")
 	subscriptionId := os.Getenv("AZURE_SUBSCRIPTION_ID")
 	tenantId := os.Getenv("AZURE_TENANT_ID")
 
-	sdk := &Sdk{
+	sdk = Sdk{
 		ServicePrincipal: &ServicePrincipal{
 			ClientID:       clientId,
 			ClientSecret:   clientSecret,
@@ -47,18 +56,20 @@ func Authenticate() *resources.GroupsClient {
 		},
 	}
 
-	if err := utils.CheckEnvVar((&sdk.ServicePrincipal.HashMap)); err != nil {
-		fmt.Errorf("Error: %v", err)
+	if err := utils.CheckEnvVar(&sdk.ServicePrincipal.HashMap); err != nil {
+		log.WithFields(log.Fields{
+			"Environment check error": err,
+		}).Error("Environment variables missing")
 		return nil
 	}
 
 	authenticatedToken, err := helpers.NewServicePrincipalTokenFromCredentials(sdk.ServicePrincipal.HashMap, azure.PublicCloud.ResourceManagerEndpoint)
 	if err != nil {
-		fmt.Errorf("Token %#v", authenticatedToken)
+		log.WithFields(log.Fields{
+			"Authentication error": err,
+		}).Error("Failed to authenticate with Azure")
 		return nil
 	}
-
-	fmt.Printf("Token %#v", authenticatedToken.Token)
 
 	sdk.ServicePrincipal.AuthenticatedToken = authenticatedToken
 
@@ -67,5 +78,8 @@ func Authenticate() *resources.GroupsClient {
 	sdk.ResourceGroup = &resourceGroup
 
 	return sdk.ResourceGroup
+}
 
+func GetSdk() *Sdk {
+	return &sdk
 }
