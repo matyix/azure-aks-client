@@ -2,8 +2,8 @@ package client
 
 import (
 	"encoding/json"
-	"github.com/Azure/azure-sdk-for-go/arm/resources/resources"
 	"github.com/Azure/go-autorest/autorest"
+	cluster "github.com/banzaicloud/azure-aks-client/cluster"
 	log "github.com/sirupsen/logrus"
 	"io/ioutil"
 	"net/http"
@@ -24,12 +24,14 @@ GET https://management.azure.com/subscriptions/
 	{resourceGroupName}/providers/Microsoft.ContainerService/managedClusters?
 	api-version=2017-08-31
 */
-func ListClusters(groupClient *resources.GroupsClient, managedCluster ManagedCluster) {
+func ListClusters(sdk *cluster.Sdk, resourceGroup string) {
 
 	pathParam := map[string]interface{}{
 		"subscription-id": sdk.ServicePrincipal.SubscriptionID,
-		"resourceGroup":   managedCluster.ClusterDetails.ResourceGroup}
+		"resourceGroup":   resourceGroup}
 	queryParam := map[string]interface{}{"api-version": "2017-08-31"}
+
+	groupClient := *sdk.ResourceGroup
 
 	req, _ := autorest.Prepare(&http.Request{},
 		groupClient.WithAuthorization(),
@@ -74,23 +76,20 @@ CreateCluster creates a managed AKS on Azure
 PUT https://management.azure.com/subscriptions/
 	{subscriptionId}/resourceGroups/
 	{resourceGroupName}/providers/Microsoft.ContainerService/managedClusters/{resourceName}?
-	api-version=2017-08-31
+	api-version=2017-08-31sdk *cluster.Sdk
 */
-func CreateCluster(groupClient *resources.GroupsClient, managedCluster ManagedCluster) {
+func CreateCluster(sdk *cluster.Sdk, managedCluster cluster.ManagedCluster, name string, resourceGroup string) {
 
 	pathParam := map[string]interface{}{
 		"subscription-id": sdk.ServicePrincipal.SubscriptionID,
-		"resourceGroup":   managedCluster.ClusterDetails.ResourceGroup,
-		"resourceName":    managedCluster.ClusterDetails.Name}
+		"resourceGroup":   resourceGroup,
+		"resourceName":    name}
 	queryParam := map[string]interface{}{"api-version": "2017-08-31"}
 
-	createRequest := CreateRequest{
-		Location:   managedCluster.ClusterDetails.Location,
-		Properties: managedCluster.ClusterProperties,
-	}
 	//if clusterProperties != nil {
 	//	createRequest.properties = clusterProperties
 	//}
+	groupClient := *sdk.ResourceGroup
 
 	req, _ := autorest.Prepare(&http.Request{},
 		groupClient.WithAuthorization(),
@@ -98,12 +97,12 @@ func CreateCluster(groupClient *resources.GroupsClient, managedCluster ManagedCl
 		autorest.WithBaseURL("https://management.azure.com"),
 		autorest.WithPathParameters("/subscriptions/{subscription-id}/resourceGroups/{resourceGroup}/providers/Microsoft.ContainerService/managedClusters/{resourceName}", pathParam),
 		autorest.WithQueryParameters(queryParam),
-		autorest.WithJSON(createRequest),
+		autorest.WithJSON(managedCluster),
 		autorest.AsContentType("application/json"),
 	)
 
 	//val, err := json.Marshal(createRequest)
-	_, err := json.Marshal(createRequest)
+	_, err := json.Marshal(managedCluster)
 	if err != nil {
 		log.WithFields(log.Fields{
 			"error": err,
@@ -142,13 +141,15 @@ DELETE https://management.azure.com/subscriptions/
 	{resourceGroupName}/providers/Microsoft.ContainerService/managedClusters/{resourceName}?
 	api-version=2017-08-31
 */
-func DeleteCluster(groupClient *resources.GroupsClient, managedCluster ManagedCluster) {
+func DeleteCluster(sdk *cluster.Sdk, name string, resourceGroup string) {
 
 	pathParam := map[string]interface{}{
 		"subscription-id": sdk.ServicePrincipal.SubscriptionID,
-		"resourceGroup":   clusterDetails.ResourceGroup,
-		"resourceName":    clusterDetails.Name}
+		"resourceGroup":   resourceGroup,
+		"resourceName":    name}
 	queryParam := map[string]interface{}{"api-version": "2017-08-31"}
+
+	groupClient := *sdk.ResourceGroup
 
 	req, _ := autorest.Prepare(&http.Request{},
 		groupClient.WithAuthorization(),

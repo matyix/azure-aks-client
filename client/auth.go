@@ -21,7 +21,7 @@ func init() {
 	log.SetLevel(log.InfoLevel)
 }
 
-func Authenticate() *resources.GroupsClient {
+func Authenticate() *cluster.Sdk {
 	clientId := os.Getenv("AZURE_CLIENT_ID")
 	clientSecret := os.Getenv("AZURE_CLIENT_SECRET")
 	subscriptionId := os.Getenv("AZURE_SUBSCRIPTION_ID")
@@ -63,7 +63,7 @@ func Authenticate() *resources.GroupsClient {
 	resourceGroup.Authorizer = autorest.NewBearerAuthorizer(sdk.ServicePrincipal.AuthenticatedToken)
 	sdk.ResourceGroup = &resourceGroup
 
-	return sdk.ResourceGroup
+	return &sdk
 }
 
 func GetSdk() *cluster.Sdk {

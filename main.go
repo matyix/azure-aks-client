@@ -7,9 +7,15 @@ import (
 
 func main() {
 
-	cluster := cluster.GetManagedCluster()
+	var sdk cluster.Sdk
+	sdk = *client.Authenticate()
+
+	clientId := sdk.ServicePrincipal.ClientID
+	secret := sdk.ServicePrincipal.ClientSecret
+
+	cluster := cluster.GetTestManagedCluster(clientId, secret)
 
 	//azure.ListClusters(azure.Authenticate())
-	client.CreateCluster(client.Authenticate(), cluster)
+	client.CreateCluster(&sdk, *cluster, "lofasz", "rg1")
 	//azure.DeleteCluster(azure.Authenticate(), cluster)
 }
