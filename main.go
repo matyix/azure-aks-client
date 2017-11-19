@@ -1,22 +1,23 @@
 package main
 
 import (
-	azure "github.com/banzaicloud/azure-aks-client/client"
+	"fmt"
+	client "github.com/banzaicloud/azure-aks-client/client"
+	cluster "github.com/banzaicloud/azure-aks-client/cluster"
 )
 
 func main() {
 
-	cluster := azure.ClusterDetails{
-		Name:          "AK47-reloaded",
-		ResourceGroup: "rg1",
-		Location:      "eastus",
-		VMSize:        "Standard_D2_v2",
-		DNSPrefix:     "gun",
-		AdminUsername: "",
-		PubKeyName:    "id_rsa.pub",
-	}
+	var sdk cluster.Sdk
+	sdk = *client.Authenticate()
 
-	//azure.ListClusters(azure.Authenticate())
-	azure.CreateCluster(azure.Authenticate(), cluster)
-	//azure.DeleteCluster(azure.Authenticate(), cluster)
+	clientId := sdk.ServicePrincipal.ClientID
+	secret := sdk.ServicePrincipal.ClientSecret
+
+	cluster := cluster.GetTestManagedCluster(clientId, secret)
+	fmt.Printf("Cluster :#%v ", cluster)
+
+	//client.ListClusters(&sdk, "rg1")
+	client.CreateCluster(&sdk, *cluster, "lofasz", "rg1")
+	//client.DeleteCluster(&sdk, "lofasz", "rg1")
 }

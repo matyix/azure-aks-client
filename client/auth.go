@@ -6,27 +6,13 @@ import (
 	"github.com/Azure/azure-sdk-for-go/arm/examples/helpers"
 	"github.com/Azure/azure-sdk-for-go/arm/resources/resources"
 	"github.com/Azure/go-autorest/autorest"
-	"github.com/Azure/go-autorest/autorest/adal"
 	"github.com/Azure/go-autorest/autorest/azure"
+	cluster "github.com/banzaicloud/azure-aks-client/cluster"
 	"github.com/banzaicloud/azure-aks-client/utils"
 	log "github.com/sirupsen/logrus"
 )
 
-type Sdk struct {
-	ServicePrincipal *ServicePrincipal
-	ResourceGroup    *resources.GroupsClient
-}
-
-type ServicePrincipal struct {
-	ClientID           string
-	ClientSecret       string
-	SubscriptionID     string
-	TenantId           string
-	HashMap            map[string]string
-	AuthenticatedToken *adal.ServicePrincipalToken
-}
-
-var sdk Sdk
+var sdk cluster.Sdk
 
 func init() {
 	// Log as JSON
@@ -35,14 +21,14 @@ func init() {
 	log.SetLevel(log.InfoLevel)
 }
 
-func Authenticate() *resources.GroupsClient {
+func Authenticate() *cluster.Sdk {
 	clientId := os.Getenv("AZURE_CLIENT_ID")
 	clientSecret := os.Getenv("AZURE_CLIENT_SECRET")
 	subscriptionId := os.Getenv("AZURE_SUBSCRIPTION_ID")
 	tenantId := os.Getenv("AZURE_TENANT_ID")
 
-	sdk = Sdk{
-		ServicePrincipal: &ServicePrincipal{
+	sdk = cluster.Sdk{
+		ServicePrincipal: &cluster.ServicePrincipal{
 			ClientID:       clientId,
 			ClientSecret:   clientSecret,
 			SubscriptionID: subscriptionId,
@@ -77,9 +63,9 @@ func Authenticate() *resources.GroupsClient {
 	resourceGroup.Authorizer = autorest.NewBearerAuthorizer(sdk.ServicePrincipal.AuthenticatedToken)
 	sdk.ResourceGroup = &resourceGroup
 
-	return sdk.ResourceGroup
+	return &sdk
 }
 
-func GetSdk() *Sdk {
+func GetSdk() *cluster.Sdk {
 	return &sdk
 }

@@ -2,10 +2,8 @@ package client
 
 import (
 	"encoding/json"
-	"github.com/Azure/azure-sdk-for-go/arm/containerservice"
-	"github.com/Azure/azure-sdk-for-go/arm/resources/resources"
 	"github.com/Azure/go-autorest/autorest"
-	"github.com/banzaicloud/azure-aks-client/utils"
+	cluster "github.com/banzaicloud/azure-aks-client/cluster"
 	log "github.com/sirupsen/logrus"
 	"io/ioutil"
 	"net/http"
@@ -17,37 +15,6 @@ func init() {
 	log.SetFormatter(&log.JSONFormatter{})
 	log.SetOutput(os.Stdout)
 	log.SetLevel(log.InfoLevel)
-
-	sdk = *GetSdk()
-}
-
-type AgentPoolProfiles struct {
-	Count  int    `json:"count"`
-	Name   string `json:"name"`
-	VMSize string `json:"vmSize"`
-}
-
-type ClusterProperties struct {
-	DNSPrefix               string                                   `json:"dnsPrefix"`
-	AgentPoolProfiles       []AgentPoolProfiles                      `json:"agentPoolProfiles"`
-	KubernetesVersion       string                                   `json:"kubernetesVersion"`
-	LinuxProfile            containerservice.LinuxProfile            `json:"linuxProfile"`
-	ServicePrincipalProfile containerservice.ServicePrincipalProfile `json:"servicePrincipalProfile"`
-}
-
-type CreateRequest struct {
-	Location   string            `json:"location"`
-	Properties ClusterProperties `json:"properties"`
-}
-
-type ClusterDetails struct {
-	Name          string
-	ResourceGroup string
-	Location      string
-	VMSize        string
-	DNSPrefix     string
-	AdminUsername string
-	PubKeyName    string
 }
 
 /*
@@ -57,12 +24,14 @@ GET https://management.azure.com/subscriptions/
 	{resourceGroupName}/providers/Microsoft.ContainerService/managedClusters?
 	api-version=2017-08-31
 */
-func ListClusters(groupClient *resources.GroupsClient, clusterDetails ClusterDetails) {
+func ListClusters(sdk *cluster.Sdk, resourceGroup string) {
 
 	pathParam := map[string]interface{}{
 		"subscription-id": sdk.ServicePrincipal.SubscriptionID,
-		"resourceGroup":   clusterDetails.ResourceGroup}
+		"resourceGroup":   resourceGroup}
 	queryParam := map[string]interface{}{"api-version": "2017-08-31"}
+
+	groupClient := *sdk.ResourceGroup
 
 	req, _ := autorest.Prepare(&http.Request{},
 		groupClient.WithAuthorization(),
@@ -107,50 +76,20 @@ CreateCluster creates a managed AKS on Azure
 PUT https://management.azure.com/subscriptions/
 	{subscriptionId}/resourceGroups/
 	{resourceGroupName}/providers/Microsoft.ContainerService/managedClusters/{resourceName}?
-	api-version=2017-08-31
+	api-version=2017-08-31sdk *cluster.Sdk
 */
-func CreateCluster(groupClient *resources.GroupsClient, clusterDetails ClusterDetails) {
+func CreateCluster(sdk *cluster.Sdk, managedCluster cluster.ManagedCluster, name string, resourceGroup string) {
 
 	pathParam := map[string]interface{}{
 		"subscription-id": sdk.ServicePrincipal.SubscriptionID,
-		"resourceGroup":   clusterDetails.ResourceGroup,
-		"resourceName":    clusterDetails.Name}
+		"resourceGroup":   resourceGroup,
+		"resourceName":    name}
 	queryParam := map[string]interface{}{"api-version": "2017-08-31"}
 
-	clientId := sdk.ServicePrincipal.ClientID
-	clientSecret := sdk.ServicePrincipal.ClientSecret
-
-	createRequest := CreateRequest{
-		Location: clusterDetails.Location,
-		Properties: ClusterProperties{
-			DNSPrefix: clusterDetails.DNSPrefix,
-			AgentPoolProfiles: []AgentPoolProfiles{
-				{
-					Count:  1,
-					Name:   "agentpool1",
-					VMSize: clusterDetails.VMSize,
-				},
-			},
-			KubernetesVersion: "1.7.7",
-			ServicePrincipalProfile: containerservice.ServicePrincipalProfile{
-				ClientID: &clientId,
-				Secret:   &clientSecret,
-			},
-			LinuxProfile: containerservice.LinuxProfile{
-				AdminUsername: S(clusterDetails.AdminUsername),
-				SSH: &containerservice.SSHConfiguration{
-					PublicKeys: &[]containerservice.SSHPublicKey{
-						{
-							KeyData: S(utils.ReadPubRSA(clusterDetails.PubKeyName)),
-						},
-					},
-				},
-			},
-		},
-	}
 	//if clusterProperties != nil {
 	//	createRequest.properties = clusterProperties
 	//}
+	groupClient := *sdk.ResourceGroup
 
 	req, _ := autorest.Prepare(&http.Request{},
 		groupClient.WithAuthorization(),
@@ -158,12 +97,12 @@ func CreateCluster(groupClient *resources.GroupsClient, clusterDetails ClusterDe
 		autorest.WithBaseURL("https://management.azure.com"),
 		autorest.WithPathParameters("/subscriptions/{subscription-id}/resourceGroups/{resourceGroup}/providers/Microsoft.ContainerService/managedClusters/{resourceName}", pathParam),
 		autorest.WithQueryParameters(queryParam),
-		autorest.WithJSON(createRequest),
+		autorest.WithJSON(managedCluster),
 		autorest.AsContentType("application/json"),
 	)
 
 	//val, err := json.Marshal(createRequest)
-	_, err := json.Marshal(createRequest)
+	_, err := json.Marshal(managedCluster)
 	if err != nil {
 		log.WithFields(log.Fields{
 			"error": err,
@@ -202,13 +141,15 @@ DELETE https://management.azure.com/subscriptions/
 	{resourceGroupName}/providers/Microsoft.ContainerService/managedClusters/{resourceName}?
 	api-version=2017-08-31
 */
-func DeleteCluster(groupClient *resources.GroupsClient, clusterDetails ClusterDetails) {
+func DeleteCluster(sdk *cluster.Sdk, name string, resourceGroup string) {
 
 	pathParam := map[string]interface{}{
 		"subscription-id": sdk.ServicePrincipal.SubscriptionID,
-		"resourceGroup":   clusterDetails.ResourceGroup,
-		"resourceName":    clusterDetails.Name}
+		"resourceGroup":   resourceGroup,
+		"resourceName":    name}
 	queryParam := map[string]interface{}{"api-version": "2017-08-31"}
+
+	groupClient := *sdk.ResourceGroup
 
 	req, _ := autorest.Prepare(&http.Request{},
 		groupClient.WithAuthorization(),
@@ -244,11 +185,6 @@ func DeleteCluster(groupClient *resources.GroupsClient, clusterDetails ClusterDe
 	*/
 	log.Info("Delete cluster call response status", resp.StatusCode)
 
-}
-
-func S(input string) *string {
-	s := input
-	return &s
 }
 
 type ListInRG struct {
