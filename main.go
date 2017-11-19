@@ -1,6 +1,7 @@
 package main
 
 import (
+	"fmt"
 	client "github.com/banzaicloud/azure-aks-client/client"
 	cluster "github.com/banzaicloud/azure-aks-client/cluster"
 )
@@ -14,8 +15,9 @@ func main() {
 	secret := sdk.ServicePrincipal.ClientSecret
 
 	cluster := cluster.GetTestManagedCluster(clientId, secret)
+	fmt.Printf("Cluster :#%v ", cluster)
 
-	//azure.ListClusters(azure.Authenticate())
+	//client.ListClusters(&sdk, "rg1")
 	client.CreateCluster(&sdk, *cluster, "lofasz", "rg1")
-	//azure.DeleteCluster(azure.Authenticate(), cluster)
+	//client.DeleteCluster(&sdk, "lofasz", "rg1")
 }
