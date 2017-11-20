@@ -18,6 +18,6 @@ func main() {
 	fmt.Printf("Cluster :#%v ", cluster)
 
 	//client.ListClusters(&sdk, "rg1")
-	client.CreateCluster(&sdk, *cluster, "lofasz", "rg1")
-	//client.DeleteCluster(&sdk, "lofasz", "rg1")
+	//client.CreateCluster(&sdk, *cluster, "lofasz", "rg1")
+	client.DeleteCluster(&sdk, "lofasz", "rg1")
 }

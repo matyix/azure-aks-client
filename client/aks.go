@@ -78,7 +78,7 @@ PUT https://management.azure.com/subscriptions/
 	{resourceGroupName}/providers/Microsoft.ContainerService/managedClusters/{resourceName}?
 	api-version=2017-08-31sdk *cluster.Sdk
 */
-func CreateCluster(sdk *cluster.Sdk, managedCluster cluster.ManagedCluster, name string, resourceGroup string) {
+func CreateCluster(sdk *cluster.Sdk, managedCluster cluster.ManagedCluster, name string, resourceGroup string) string {
 
 	pathParam := map[string]interface{}{
 		"subscription-id": sdk.ServicePrincipal.SubscriptionID,
@@ -107,7 +107,7 @@ func CreateCluster(sdk *cluster.Sdk, managedCluster cluster.ManagedCluster, name
 		log.WithFields(log.Fields{
 			"error": err,
 		}).Error("error during JSON marshal ")
-		return
+		return name
 	}
 	//log.Info("JSON body ", val)
 
@@ -116,7 +116,7 @@ func CreateCluster(sdk *cluster.Sdk, managedCluster cluster.ManagedCluster, name
 		log.WithFields(log.Fields{
 			"error": err,
 		}).Error("error during cluster create call ")
-		return
+		return name
 	}
 
 	defer resp.Body.Close()
@@ -132,6 +132,9 @@ func CreateCluster(sdk *cluster.Sdk, managedCluster cluster.ManagedCluster, name
 	log.Info("Cluster create call response status", resp.StatusCode)
 	log.Info("Cluster create response", string(value))
 
+	log.Info("Cluster creation with name %#v has started")
+	return name
+
 }
 
 /*
@@ -141,7 +144,7 @@ DELETE https://management.azure.com/subscriptions/
 	{resourceGroupName}/providers/Microsoft.ContainerService/managedClusters/{resourceName}?
 	api-version=2017-08-31
 */
-func DeleteCluster(sdk *cluster.Sdk, name string, resourceGroup string) {
+func DeleteCluster(sdk *cluster.Sdk, name string, resourceGroup string) string {
 
 	pathParam := map[string]interface{}{
 		"subscription-id": sdk.ServicePrincipal.SubscriptionID,
@@ -164,7 +167,7 @@ func DeleteCluster(sdk *cluster.Sdk, name string, resourceGroup string) {
 		log.WithFields(log.Fields{
 			"error": err,
 		}).Error("error during cluster delete call ")
-		return
+		return ""
 	}
 
 	log.Info("Delete cluster call response status", resp.StatusCode)
@@ -184,6 +187,7 @@ func DeleteCluster(sdk *cluster.Sdk, name string, resourceGroup string) {
 		}
 	*/
 	log.Info("Delete cluster call response status", resp.StatusCode)
+	return name
 
 }
 
