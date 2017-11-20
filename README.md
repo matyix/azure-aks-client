@@ -98,7 +98,7 @@ Until the registration goes through all the zones and datacenters have a coffee.
 
 #### Validate, test the cluster
 
-Install the AKS CLI tool by running `az aks install-cli`. Get the credentials to the cluster by running `az aks get-credentials --resource-group rg1 --name AKS_CLUSTER_NAME`.
+Install the AKS CLI tool by running `az aks install-cli`. Get the credentials to the cluster by running `az aks get-credentials --resource-group YOUR_RG_NAME --name YOUR_AKS_CLUSTER_NAME`.
 
 You can now use **kubectl* to operate the cluster. Get the number of nodes and validate the result: 
 
@@ -108,11 +108,8 @@ NAME                        STATUS    ROLES     AGE       VERSION
 aks-agentpool1-36552431-0   Ready     agent     12m       v1.7.7
 ```
 
-Scale the cluster: `az aks scale --name AKS_CLUSTER_NAME --resource-group rg1 --node-count 1 --resource-group rg1`
+Scale the cluster: `az aks scale --name AKS_CLUSTER_NAME --resource-group YOUR_RG_NAME --node-count 1 --resource-group YOUR_RG_NAME`
 
-#### Limitations
-
-Currently all operations are under one hardcoded resource group, `rg1` as in this [example](https://github.com/matyix/azure-aks-client/blob/master/client/aks.go#L34). 
 
 #### Tooling
 

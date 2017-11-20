@@ -1,7 +1,7 @@
 package main
 
 import (
-	azure "github.com/matyix/azure-aks-client/client"
+	azure "github.com/banzaicloud/azure-aks-client/client"
 )
 
 func main() {

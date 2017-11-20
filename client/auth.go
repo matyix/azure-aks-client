@@ -8,7 +8,7 @@ import (
 	"github.com/Azure/go-autorest/autorest"
 	"github.com/Azure/go-autorest/autorest/adal"
 	"github.com/Azure/go-autorest/autorest/azure"
-	"github.com/matyix/azure-aks-client/utils"
+	"github.com/banzaicloud/azure-aks-client/utils"
 	log "github.com/sirupsen/logrus"
 )
 
