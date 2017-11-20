@@ -1,3 +1,8 @@
+# Repo and maintenance moved to [Banzai Cloud](https://github.com/banzaicloud/azure-aks-client)
+
+=====================================================================
+
+
 ### AKS client until Swagger/SDK is released
 
 This is a library to create Microsoft Managed Kubernetes clusters (**AKS**) on Azure cloud. it is a temporary solution until the following PR's are not merged upstream.
