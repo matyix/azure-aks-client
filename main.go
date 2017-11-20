@@ -4,12 +4,16 @@ import (
 	"fmt"
 	client "github.com/banzaicloud/azure-aks-client/client"
 	cluster "github.com/banzaicloud/azure-aks-client/cluster"
+	"github.com/banzaicloud/azure-aks-client/initapi"
 )
 
-func main() {
+var sdk *cluster.Sdk
 
-	var sdk cluster.Sdk
-	sdk = *client.Authenticate()
+func init() {
+	sdk = initapi.Init()
+}
+
+func main() {
 
 	clientId := sdk.ServicePrincipal.ClientID
 	secret := sdk.ServicePrincipal.ClientSecret
@@ -18,6 +22,6 @@ func main() {
 	fmt.Printf("Cluster :#%v ", cluster)
 
 	//client.ListClusters(&sdk, "rg1")
-	//client.CreateCluster(&sdk, *cluster, "lofasz", "rg1")
-	client.DeleteCluster(&sdk, "lofasz", "rg1")
+	client.CreateCluster(sdk, *cluster, "lofasz", "rg1")
+	//client.DeleteCluster(sdk, "lofasz", "rg1")
 }
