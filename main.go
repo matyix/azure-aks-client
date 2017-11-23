@@ -2,26 +2,33 @@ package main
 
 import (
 	"fmt"
-	client "github.com/banzaicloud/azure-aks-client/client"
-	cluster "github.com/banzaicloud/azure-aks-client/cluster"
+	"github.com/banzaicloud/azure-aks-client/client"
+	"github.com/banzaicloud/azure-aks-client/cluster"
 	"github.com/banzaicloud/azure-aks-client/initapi"
 )
 
 var sdk *cluster.Sdk
+var initError *client.InitErrorResponse
 
 func init() {
-	sdk = initapi.Init()
+	sdk, initError = initapi.Init()
 }
 
 func main() {
 
-	clientId := sdk.ServicePrincipal.ClientID
-	secret := sdk.ServicePrincipal.ClientSecret
+	clientId := ""
+	secret := ""
+	if sdk != nil {
+		clientId = sdk.ServicePrincipal.ClientID
+		secret = sdk.ServicePrincipal.ClientSecret
+	}
 
 	cluster := cluster.GetTestManagedCluster(clientId, secret)
-	fmt.Printf("Cluster :#%v ", cluster)
+	fmt.Printf("Cluster :#%v \n", cluster)
 
-	//client.ListClusters(&sdk, "rg1")
-	client.CreateCluster(sdk, *cluster, "lofasz", "rg1")
-	//client.DeleteCluster(sdk, "lofasz", "rg1")
+	result := client.ListClusters(sdk, "rg1", initError)
+	// result := client.CreateCluster(sdk, *cluster, "lofasz", "rg1", initError)
+	// result := client.DeleteCluster(sdk, "lofasz", "rg1", initError)
+	// result := client.PollingCluster(sdk,"lofasz","rg1", initError)
+	fmt.Println("--------", result, "--------")
 }
