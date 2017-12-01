@@ -1,4 +1,4 @@
-package client
+package initapi
 
 import (
 	"os"
@@ -13,6 +13,8 @@ import (
 )
 
 var sdk cluster.Sdk
+
+const InternalErrorCode = 500
 
 func init() {
 	// Log as JSON
@@ -34,19 +36,19 @@ func Authenticate() (*cluster.Sdk, *InitErrorResponse) {
 
 	// ---- [Check Environmental variables] ---- //
 	if len(clientId) == 0 {
-		return nil, createEnvErrorResponse(azureClientId)
+		return nil, CreateEnvErrorResponse(azureClientId)
 	}
 
 	if len(clientSecret) == 0 {
-		return nil, createEnvErrorResponse(azureClientSecret)
+		return nil, CreateEnvErrorResponse(azureClientSecret)
 	}
 
 	if len(subscriptionId) == 0 {
-		return nil, createEnvErrorResponse(azureSubscriptionId)
+		return nil, CreateEnvErrorResponse(azureSubscriptionId)
 	}
 
 	if len(tenantId) == 0 {
-		return nil, createEnvErrorResponse(azureTenantId)
+		return nil, CreateEnvErrorResponse(azureTenantId)
 	}
 
 	sdk = cluster.Sdk{
@@ -66,7 +68,7 @@ func Authenticate() (*cluster.Sdk, *InitErrorResponse) {
 
 	authenticatedToken, err := helpers.NewServicePrincipalTokenFromCredentials(sdk.ServicePrincipal.HashMap, azure.PublicCloud.ResourceManagerEndpoint)
 	if err != nil {
-		return nil, createAuthErrorResponse(err)
+		return nil, CreateAuthErrorResponse(err)
 	}
 
 	sdk.ServicePrincipal.AuthenticatedToken = authenticatedToken
@@ -87,19 +89,19 @@ type InitErrorResponse struct {
 	Message    string `json:"message"`
 }
 
-func (e InitErrorResponse) toString() string {
+func (e InitErrorResponse) ToString() string {
 	jsonResponse, _ := json.Marshal(e)
 	return string(jsonResponse)
 }
 
-func createEnvErrorResponse(env string) *InitErrorResponse {
+func CreateEnvErrorResponse(env string) *InitErrorResponse {
 	message := "Environmental variable is empty: " + env
 	log.WithFields(log.Fields{"error": "environmental_error"}).Error(message)
-	return &InitErrorResponse{StatusCode: internalErrorCode, Message: message}
+	return &InitErrorResponse{StatusCode: InternalErrorCode, Message: message}
 }
 
-func createAuthErrorResponse(err error) *InitErrorResponse {
+func CreateAuthErrorResponse(err error) *InitErrorResponse {
 	errMsg := "Failed to authenticate with Azure"
 	log.WithFields(log.Fields{"Authentication error": err}).Error(errMsg)
-	return &InitErrorResponse{StatusCode: internalErrorCode, Message: errMsg}
+	return &InitErrorResponse{StatusCode: InternalErrorCode, Message: errMsg}
 }

@@ -19,7 +19,7 @@ type ManagedCluster struct {
 	Properties Properties `json:"properties"`
 }
 
-func GetManagedCluster(request CreateClusterRequest) *ManagedCluster {
+func GetManagedCluster(request CreateClusterRequest, clientId string, secret string) *ManagedCluster {
 	return &ManagedCluster{
 		Location: request.Location,
 		Properties: Properties{
@@ -33,8 +33,8 @@ func GetManagedCluster(request CreateClusterRequest) *ManagedCluster {
 			},
 			KubernetesVersion: "1.7.7",
 			ServicePrincipalProfile: ServicePrincipalProfile{
-				ClientID: utils.S(request.ClientId),
-				Secret:   utils.S(request.Secret),
+				ClientID: utils.S(clientId),
+				Secret:   utils.S(secret),
 			},
 			LinuxProfile: LinuxProfile{
 				AdminUsername: "erospista",
@@ -58,6 +58,4 @@ type CreateClusterRequest struct {
 	AgentCount        int
 	AgentName         string
 	KubernetesVersion string
-	ClientId          string
-	Secret            string
 }

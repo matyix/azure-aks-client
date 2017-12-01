@@ -9,6 +9,7 @@ import (
 	"net/http"
 	"os"
 	"time"
+	"github.com/banzaicloud/azure-aks-client/initapi"
 )
 
 func init() {
@@ -16,9 +17,18 @@ func init() {
 	log.SetFormatter(&log.JSONFormatter{})
 	log.SetOutput(os.Stdout)
 	log.SetLevel(log.InfoLevel)
+
+	azureSdk, initError = initapi.Init()
+	if azureSdk != nil {
+		clientId = azureSdk.ServicePrincipal.ClientID
+		secret = azureSdk.ServicePrincipal.ClientSecret
+	}
 }
 
-const internalErrorCode = 500
+var azureSdk *cluster.Sdk
+var clientId string
+var secret string
+var initError *initapi.InitErrorResponse
 
 /*
 ListClusters is listing AKS clusters in the specified subscription and resource group
@@ -27,18 +37,24 @@ GET https://management.azure.com/subscriptions/
 	{resourceGroupName}/providers/Microsoft.ContainerService/managedClusters?
 	api-version=2017-08-31
 */
-func ListClusters(sdk *cluster.Sdk, resourceGroup string, initError *InitErrorResponse) string {
+func ListClusters(resourceGroup string) string {
 
-	if sdk == nil {
-		return initError.toString()
+	if azureSdk == nil {
+		return initError.ToString()
+	}
+
+	if len(clientId) == 0 || len(secret) == 0 {
+		message := "ClientId or secret is empty"
+		log.WithFields(log.Fields{"error": "environmental_error"}).Error(message)
+		return initapi.InitErrorResponse{StatusCode: initapi.InternalErrorCode, Message: message}.ToString()
 	}
 
 	pathParam := map[string]interface{}{
-		"subscription-id": sdk.ServicePrincipal.SubscriptionID,
+		"subscription-id": azureSdk.ServicePrincipal.SubscriptionID,
 		"resourceGroup":   resourceGroup}
 	queryParam := map[string]interface{}{"api-version": "2017-08-31"}
 
-	groupClient := *sdk.ResourceGroup
+	groupClient := *azureSdk.ResourceGroup
 
 	req, err := autorest.Prepare(&http.Request{},
 		groupClient.WithAuthorization(),
@@ -83,21 +99,27 @@ PUT https://management.azure.com/subscriptions/
 	{resourceGroupName}/providers/Microsoft.ContainerService/managedClusters/{resourceName}?
 	api-version=2017-08-31sdk *cluster.Sdk
 */
-func CreateCluster(sdk *cluster.Sdk, request cluster.CreateClusterRequest, initError *InitErrorResponse) string {
+func CreateCluster(request cluster.CreateClusterRequest) string {
 
-	if sdk == nil {
-		return initError.toString()
+	if azureSdk == nil {
+		return initError.ToString()
 	}
 
-	managedCluster := cluster.GetManagedCluster(request)
+	if len(clientId) == 0 || len(secret) == 0 {
+		message := "ClientId or secret is empty"
+		log.WithFields(log.Fields{"error": "environmental_error"}).Error(message)
+		return initapi.InitErrorResponse{StatusCode: initapi.InternalErrorCode, Message: message}.ToString()
+	}
+
+	managedCluster := cluster.GetManagedCluster(request, clientId, secret)
 
 	pathParam := map[string]interface{}{
-		"subscription-id": sdk.ServicePrincipal.SubscriptionID,
+		"subscription-id": azureSdk.ServicePrincipal.SubscriptionID,
 		"resourceGroup":   request.ResourceGroup,
 		"resourceName":    request.Name}
 	queryParam := map[string]interface{}{"api-version": "2017-08-31"}
 
-	groupClient := *sdk.ResourceGroup
+	groupClient := *azureSdk.ResourceGroup
 
 	req, _ := autorest.Prepare(&http.Request{},
 		groupClient.WithAuthorization(),
@@ -147,19 +169,25 @@ DELETE https://management.azure.com/subscriptions/
 	{resourceGroupName}/providers/Microsoft.ContainerService/managedClusters/{resourceName}?
 	api-version=2017-08-31
 */
-func DeleteCluster(sdk *cluster.Sdk, name string, resourceGroup string, initError *InitErrorResponse) string {
+func DeleteCluster(name string, resourceGroup string) string {
 
-	if sdk == nil {
-		return initError.toString()
+	if azureSdk == nil {
+		return initError.ToString()
+	}
+
+	if len(clientId) == 0 || len(secret) == 0 {
+		message := "ClientId or secret is empty"
+		log.WithFields(log.Fields{"error": "environmental_error"}).Error(message)
+		return initapi.InitErrorResponse{StatusCode: initapi.InternalErrorCode, Message: message}.ToString()
 	}
 
 	pathParam := map[string]interface{}{
-		"subscription-id": sdk.ServicePrincipal.SubscriptionID,
+		"subscription-id": azureSdk.ServicePrincipal.SubscriptionID,
 		"resourceGroup":   resourceGroup,
 		"resourceName":    name}
 	queryParam := map[string]interface{}{"api-version": "2017-08-31"}
 
-	groupClient := *sdk.ResourceGroup
+	groupClient := *azureSdk.ResourceGroup
 
 	req, err := autorest.Prepare(&http.Request{},
 		groupClient.WithAuthorization(),
@@ -204,10 +232,16 @@ GET https://management.azure.com/subscriptions/
 	{resourceGroupName}/providers/Microsoft.ContainerService/managedClusters/{resourceName}?
 	api-version=2017-08-31
  */
-func PollingCluster(sdk *cluster.Sdk, name string, resourceGroup string, initError *InitErrorResponse) string {
+func PollingCluster(name string, resourceGroup string) string {
 
-	if sdk == nil {
-		return initError.toString()
+	if azureSdk == nil {
+		return initError.ToString()
+	}
+
+	if len(clientId) == 0 || len(secret) == 0 {
+		message := "ClientId or secret is empty"
+		log.WithFields(log.Fields{"error": "environmental_error"}).Error(message)
+		return initapi.InitErrorResponse{StatusCode: initapi.InternalErrorCode, Message: message}.ToString()
 	}
 
 	const OK = 200
@@ -216,12 +250,12 @@ func PollingCluster(sdk *cluster.Sdk, name string, resourceGroup string, initErr
 	const waitInSeconds = 10
 
 	pathParam := map[string]interface{}{
-		"subscription-id": sdk.ServicePrincipal.SubscriptionID,
+		"subscription-id": azureSdk.ServicePrincipal.SubscriptionID,
 		"resourceGroup":   resourceGroup,
 		"resourceName":    name}
 	queryParam := map[string]interface{}{"api-version": "2017-08-31"}
 
-	groupClient := *sdk.ResourceGroup
+	groupClient := *azureSdk.ResourceGroup
 
 	req, err := autorest.Prepare(&http.Request{},
 		groupClient.WithAuthorization(),
@@ -386,7 +420,7 @@ func (r *Response) update(code int, Value Value) {
 }
 
 func createErrorResponse() string {
-	return createErrorResponseWithCode(internalErrorCode)
+	return createErrorResponseWithCode(initapi.InternalErrorCode)
 }
 
 func createErrorResponseWithCode(code int) string {
