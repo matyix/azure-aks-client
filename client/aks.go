@@ -83,16 +83,18 @@ PUT https://management.azure.com/subscriptions/
 	{resourceGroupName}/providers/Microsoft.ContainerService/managedClusters/{resourceName}?
 	api-version=2017-08-31sdk *cluster.Sdk
 */
-func CreateCluster(sdk *cluster.Sdk, managedCluster cluster.ManagedCluster, name string, resourceGroup string, initError *InitErrorResponse) string {
+func CreateCluster(sdk *cluster.Sdk, request cluster.CreateClusterRequest, initError *InitErrorResponse) string {
 
 	if sdk == nil {
 		return initError.toString()
 	}
 
+	managedCluster := cluster.GetManagedCluster(request)
+
 	pathParam := map[string]interface{}{
 		"subscription-id": sdk.ServicePrincipal.SubscriptionID,
-		"resourceGroup":   resourceGroup,
-		"resourceName":    name}
+		"resourceGroup":   request.ResourceGroup,
+		"resourceName":    request.Name}
 	queryParam := map[string]interface{}{"api-version": "2017-08-31"}
 
 	groupClient := *sdk.ResourceGroup
@@ -113,7 +115,7 @@ func CreateCluster(sdk *cluster.Sdk, managedCluster cluster.ManagedCluster, name
 		return createErrorResponse()
 	}
 
-	log.Info("Cluster creation start with name ", name, " in ", resourceGroup, " resource group")
+	log.Info("Cluster creation start with name ", request.Name, " in ", request.ResourceGroup, " resource group")
 
 	resp, err := autorest.SendWithSender(groupClient.Client, req)
 	if err != nil {
@@ -132,7 +134,7 @@ func CreateCluster(sdk *cluster.Sdk, managedCluster cluster.ManagedCluster, name
 
 	response := Value{}
 	json.Unmarshal([]byte(value), &response)
-	log.Info("Cluster creation with name ", name, " in ", resourceGroup, " resource group has started")
+	log.Info("Cluster creation with name ", request.Name, " in ", request.ResourceGroup, " resource group has started")
 
 	result := Response{StatusCode: resp.StatusCode, Value: response}
 	return result.toString()
@@ -283,9 +285,9 @@ func PollingCluster(sdk *cluster.Sdk, name string, resourceGroup string, initErr
 
 type ListInRG struct {
 	Value []struct {
-		ID         string `json:"id"`
-		Location   string `json:"location"`
-		Name       string `json:"name"`
+		ID       string `json:"id"`
+		Location string `json:"location"`
+		Name     string `json:"name"`
 		Properties struct {
 			AccessProfiles struct {
 				ClusterAdmin struct {
@@ -308,15 +310,15 @@ type ListInRG struct {
 			DNSPrefix         string `json:"dnsPrefix"`
 			Fqdn              string `json:"fqdn"`
 			KubernetesVersion string `json:"kubernetesVersion"`
-			LinuxProfile      struct {
+			LinuxProfile struct {
 				AdminUsername string `json:"adminUsername"`
-				SSH           struct {
+				SSH struct {
 					PublicKeys []struct {
 						KeyData string `json:"keyData"`
 					} `json:"publicKeys"`
 				} `json:"ssh"`
 			} `json:"linuxProfile"`
-			ProvisioningState       string `json:"provisioningState"`
+			ProvisioningState string `json:"provisioningState"`
 			ServicePrincipalProfile struct {
 				ClientID          string      `json:"clientId"`
 				KeyVaultSecretRef interface{} `json:"keyVaultSecretRef"`
@@ -360,7 +362,7 @@ type ListResponse struct {
 }
 
 type ResponseWithCode struct {
-	StatusCode int    `json:"status_code"`
+	StatusCode int `json:"status_code"`
 }
 
 func (r AzureListResponse) toString() string {

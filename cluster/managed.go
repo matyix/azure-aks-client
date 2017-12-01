@@ -19,22 +19,22 @@ type ManagedCluster struct {
 	Properties Properties `json:"properties"`
 }
 
-func GetTestManagedCluster(clientID, secret string) *ManagedCluster {
+func GetManagedCluster(request CreateClusterRequest) *ManagedCluster {
 	return &ManagedCluster{
-		Location: "eastus",
+		Location: request.Location,
 		Properties: Properties{
 			DNSPrefix: "dnsprefix",
 			AgentPoolProfiles: []AgentPoolProfiles{
 				{
-					Count:  1,
-					Name:   "agentpool1",
-					VMSize: "Standard_D2_v2",
+					Count:  request.AgentCount,
+					Name:   request.AgentName,
+					VMSize: request.VMSize,
 				},
 			},
 			KubernetesVersion: "1.7.7",
 			ServicePrincipalProfile: ServicePrincipalProfile{
-				ClientID: utils.S(clientID),
-				Secret:   utils.S(secret),
+				ClientID: utils.S(request.ClientId),
+				Secret:   utils.S(request.Secret),
 			},
 			LinuxProfile: LinuxProfile{
 				AdminUsername: "erospista",
@@ -48,4 +48,16 @@ func GetTestManagedCluster(clientID, secret string) *ManagedCluster {
 			},
 		},
 	}
+}
+
+type CreateClusterRequest struct {
+	Name              string
+	Location          string
+	VMSize            string
+	ResourceGroup     string
+	AgentCount        int
+	AgentName         string
+	KubernetesVersion string
+	ClientId          string
+	Secret            string
 }

@@ -29,11 +29,20 @@ func TestCreateCluster(t *testing.T) {
 
 	fmt.Println(" --- [ Testing creation ] ---")
 
-	c := cluster.GetTestManagedCluster(clientId, secret)
-	fmt.Printf("Cluster :#%v \n", c)
+	c := cluster.CreateClusterRequest{
+		Name:              name,
+		Location:          "eastus",
+		VMSize:            "Standard_D2_v2",
+		ResourceGroup:     resourceGroup,
+		AgentCount:        1,
+		AgentName:         "agentpool1",
+		KubernetesVersion: "1.7.7",
+		ClientId:          clientId,
+		Secret:            secret,
+	}
 
 	result := client.Response{}
-	value := client.CreateCluster(sdk, *c, name, resourceGroup, initError)
+	value := client.CreateCluster(sdk, c, initError)
 	json.Unmarshal([]byte (value), &result)
 
 	if result.StatusCode != 200 && result.StatusCode != 201 {
