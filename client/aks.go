@@ -353,7 +353,7 @@ func (r AzureListResponse) toString() string {
 	return string(jsonResponse)
 }
 
-func (v Value) toString() string {
+func (v Value) ToString() string {
 	jsonResponse, _ := json.Marshal(v)
 	return string(jsonResponse)
 }
