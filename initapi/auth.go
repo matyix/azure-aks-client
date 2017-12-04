@@ -28,7 +28,7 @@ const azureClientSecret = "AZURE_CLIENT_SECRET"
 const azureSubscriptionId = "AZURE_SUBSCRIPTION_ID"
 const azureTenantId = "AZURE_TENANT_ID"
 
-func Authenticate() (*cluster.Sdk, *InitErrorResponse) {
+func Authenticate() (*cluster.Sdk, *AzureErrorResponse) {
 	clientId := os.Getenv(azureClientId)
 	clientSecret := os.Getenv(azureClientSecret)
 	subscriptionId := os.Getenv(azureSubscriptionId)
@@ -84,24 +84,24 @@ func GetSdk() *cluster.Sdk {
 	return &sdk
 }
 
-type InitErrorResponse struct {
+type AzureErrorResponse struct {
 	StatusCode int    `json:"status_code"`
 	Message    string `json:"message"`
 }
 
-func (e InitErrorResponse) ToString() string {
+func (e AzureErrorResponse) ToString() string {
 	jsonResponse, _ := json.Marshal(e)
 	return string(jsonResponse)
 }
 
-func CreateEnvErrorResponse(env string) *InitErrorResponse {
+func CreateEnvErrorResponse(env string) *AzureErrorResponse {
 	message := "Environmental variable is empty: " + env
 	log.WithFields(log.Fields{"error": "environmental_error"}).Error(message)
-	return &InitErrorResponse{StatusCode: InternalErrorCode, Message: message}
+	return &AzureErrorResponse{StatusCode: InternalErrorCode, Message: message}
 }
 
-func CreateAuthErrorResponse(err error) *InitErrorResponse {
+func CreateAuthErrorResponse(err error) *AzureErrorResponse {
 	errMsg := "Failed to authenticate with Azure"
 	log.WithFields(log.Fields{"Authentication error": err}).Error(errMsg)
-	return &InitErrorResponse{StatusCode: InternalErrorCode, Message: errMsg}
+	return &AzureErrorResponse{StatusCode: InternalErrorCode, Message: errMsg}
 }

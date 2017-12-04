@@ -4,7 +4,7 @@ import (
 	"github.com/banzaicloud/azure-aks-client/cluster"
 )
 
-func Init() (*cluster.Sdk, *InitErrorResponse) {
+func Init() (*cluster.Sdk, *AzureErrorResponse) {
 	clusterSdk, err := Authenticate()
 	return clusterSdk, err
 }

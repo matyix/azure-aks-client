@@ -28,7 +28,7 @@ func init() {
 var azureSdk *cluster.Sdk
 var clientId string
 var secret string
-var initError *initapi.InitErrorResponse
+var initError *initapi.AzureErrorResponse
 
 /*
 ListClusters is listing AKS clusters in the specified subscription and resource group
@@ -37,16 +37,16 @@ GET https://management.azure.com/subscriptions/
 	{resourceGroupName}/providers/Microsoft.ContainerService/managedClusters?
 	api-version=2017-08-31
 */
-func ListClusters(resourceGroup string) string {
+func ListClusters(resourceGroup string) (*ListResponse, *initapi.AzureErrorResponse) {
 
 	if azureSdk == nil {
-		return initError.ToString()
+		return nil, initError
 	}
 
 	if len(clientId) == 0 || len(secret) == 0 {
 		message := "ClientId or secret is empty"
 		log.WithFields(log.Fields{"error": "environmental_error"}).Error(message)
-		return initapi.InitErrorResponse{StatusCode: initapi.InternalErrorCode, Message: message}.ToString()
+		return nil, &initapi.AzureErrorResponse{StatusCode: initapi.InternalErrorCode, Message: message}
 	}
 
 	pathParam := map[string]interface{}{
@@ -65,7 +65,7 @@ func ListClusters(resourceGroup string) string {
 
 	if err != nil {
 		log.WithFields(log.Fields{"error": err}).Error("error during listing clusters in ", resourceGroup, " resource group")
-		return createErrorResponse()
+		return nil, createErrorResponse()
 	}
 
 	log.Info("Start cluster listing in ", resourceGroup, " resource group")
@@ -73,7 +73,7 @@ func ListClusters(resourceGroup string) string {
 	resp, err := autorest.SendWithSender(groupClient.Client, req)
 	if err != nil {
 		log.WithFields(log.Fields{"error": err}).Error("error during listing clusters in ", resourceGroup, " resource group")
-		return createErrorResponse()
+		return nil, createErrorResponse()
 	}
 
 	log.Info("Cluster list response status code: ", resp.StatusCode)
@@ -81,7 +81,7 @@ func ListClusters(resourceGroup string) string {
 	value, err := ioutil.ReadAll(resp.Body)
 	if err != nil {
 		log.WithFields(log.Fields{"error": err}).Error("error during listing clusters in ", resourceGroup, " resource group")
-		return createErrorResponse()
+		return nil, createErrorResponse()
 	}
 
 	azureListResponse := AzureListResponse{}
@@ -89,7 +89,7 @@ func ListClusters(resourceGroup string) string {
 	log.Info("List cluster result ", azureListResponse.toString())
 
 	response := ListResponse{StatusCode: resp.StatusCode, Value: azureListResponse}
-	return response.toString()
+	return &response, nil
 }
 
 /*
@@ -99,16 +99,16 @@ PUT https://management.azure.com/subscriptions/
 	{resourceGroupName}/providers/Microsoft.ContainerService/managedClusters/{resourceName}?
 	api-version=2017-08-31sdk *cluster.Sdk
 */
-func CreateCluster(request cluster.CreateClusterRequest) string {
+func CreateCluster(request cluster.CreateClusterRequest) (*Response, *initapi.AzureErrorResponse) {
 
 	if azureSdk == nil {
-		return initError.ToString()
+		return nil, initError
 	}
 
 	if len(clientId) == 0 || len(secret) == 0 {
 		message := "ClientId or secret is empty"
 		log.WithFields(log.Fields{"error": "environmental_error"}).Error(message)
-		return initapi.InitErrorResponse{StatusCode: initapi.InternalErrorCode, Message: message}.ToString()
+		return nil, &initapi.AzureErrorResponse{StatusCode: initapi.InternalErrorCode, Message: message}
 	}
 
 	managedCluster := cluster.GetManagedCluster(request, clientId, secret)
@@ -134,7 +134,7 @@ func CreateCluster(request cluster.CreateClusterRequest) string {
 	_, err := json.Marshal(managedCluster)
 	if err != nil {
 		log.WithFields(log.Fields{"error": err}).Error("error during JSON marshal")
-		return createErrorResponse()
+		return nil, createErrorResponse()
 	}
 
 	log.Info("Cluster creation start with name ", request.Name, " in ", request.ResourceGroup, " resource group")
@@ -142,24 +142,24 @@ func CreateCluster(request cluster.CreateClusterRequest) string {
 	resp, err := autorest.SendWithSender(groupClient.Client, req)
 	if err != nil {
 		log.WithFields(log.Fields{"error": err}).Error("error during cluster creation")
-		return createErrorResponse()
+		return nil, createErrorResponse()
 	}
 
 	defer resp.Body.Close()
 	value, err := ioutil.ReadAll(resp.Body)
 	if err != nil {
 		log.WithFields(log.Fields{"error": err}).Error("error during cluster creation")
-		return createErrorResponse()
+		return nil, createErrorResponse()
 	}
 
 	log.Info("Cluster create response code: ", resp.StatusCode)
 
-	response := Value{}
-	json.Unmarshal([]byte(value), &response)
+	v := Value{}
+	json.Unmarshal([]byte(value), &v)
 	log.Info("Cluster creation with name ", request.Name, " in ", request.ResourceGroup, " resource group has started")
 
-	result := Response{StatusCode: resp.StatusCode, Value: response}
-	return result.toString()
+	result := Response{StatusCode: resp.StatusCode, Value: v}
+	return &result, nil
 }
 
 /*
@@ -169,16 +169,16 @@ DELETE https://management.azure.com/subscriptions/
 	{resourceGroupName}/providers/Microsoft.ContainerService/managedClusters/{resourceName}?
 	api-version=2017-08-31
 */
-func DeleteCluster(name string, resourceGroup string) string {
+func DeleteCluster(name string, resourceGroup string) (*Response, *initapi.AzureErrorResponse) {
 
 	if azureSdk == nil {
-		return initError.ToString()
+		return nil, initError
 	}
 
 	if len(clientId) == 0 || len(secret) == 0 {
 		message := "ClientId or secret is empty"
 		log.WithFields(log.Fields{"error": "environmental_error"}).Error(message)
-		return initapi.InitErrorResponse{StatusCode: initapi.InternalErrorCode, Message: message}.ToString()
+		return nil, &initapi.AzureErrorResponse{StatusCode: initapi.InternalErrorCode, Message: message}
 	}
 
 	pathParam := map[string]interface{}{
@@ -199,7 +199,7 @@ func DeleteCluster(name string, resourceGroup string) string {
 
 	if err != nil {
 		log.WithFields(log.Fields{"error": err}).Error("error during delete cluster")
-		return createErrorResponse()
+		return nil, createErrorResponse()
 	}
 
 	log.Info("Cluster delete start with name ", name, " in ", resourceGroup, " resource group")
@@ -207,7 +207,7 @@ func DeleteCluster(name string, resourceGroup string) string {
 	resp, err := autorest.SendWithSender(groupClient.Client, req)
 	if err != nil {
 		log.WithFields(log.Fields{"error": err}).Error("error during delete cluster")
-		return createErrorResponse()
+		return nil, createErrorResponse()
 	}
 
 	log.Info("Cluster delete status code: ", resp.StatusCode)
@@ -216,13 +216,13 @@ func DeleteCluster(name string, resourceGroup string) string {
 	value, err := ioutil.ReadAll(resp.Body)
 	if err != nil {
 		log.WithFields(log.Fields{"error": err}).Error("error during delete cluster")
-		return createErrorResponse()
+		return nil, createErrorResponse()
 	}
 
 	log.Info("Delete cluster response ", string(value))
 
-	result := ResponseWithCode{StatusCode: resp.StatusCode}
-	return result.toString()
+	result := Response{StatusCode: resp.StatusCode}
+	return &result, nil
 }
 
 /*
@@ -232,16 +232,16 @@ GET https://management.azure.com/subscriptions/
 	{resourceGroupName}/providers/Microsoft.ContainerService/managedClusters/{resourceName}?
 	api-version=2017-08-31
  */
-func PollingCluster(name string, resourceGroup string) string {
+func PollingCluster(name string, resourceGroup string) (*Response, *initapi.AzureErrorResponse) {
 
 	if azureSdk == nil {
-		return initError.ToString()
+		return nil, initError
 	}
 
 	if len(clientId) == 0 || len(secret) == 0 {
 		message := "ClientId or secret is empty"
 		log.WithFields(log.Fields{"error": "environmental_error"}).Error(message)
-		return initapi.InitErrorResponse{StatusCode: initapi.InternalErrorCode, Message: message}.ToString()
+		return nil, &initapi.AzureErrorResponse{StatusCode: initapi.InternalErrorCode, Message: message}
 	}
 
 	const OK = 200
@@ -267,7 +267,7 @@ func PollingCluster(name string, resourceGroup string) string {
 
 	if err != nil {
 		log.WithFields(log.Fields{"error": err}).Error("error during cluster polling")
-		return createErrorResponse()
+		return nil, createErrorResponse()
 	}
 
 	log.Info("Cluster polling start with name ", name, " in ", resourceGroup, " resource group")
@@ -278,7 +278,7 @@ func PollingCluster(name string, resourceGroup string) string {
 		resp, err := autorest.SendWithSender(groupClient.Client, req)
 		if err != nil {
 			log.WithFields(log.Fields{"error": err}).Error("error during cluster polling")
-			return createErrorResponse()
+			return nil, createErrorResponse()
 		}
 
 		statusCode := resp.StatusCode
@@ -289,7 +289,7 @@ func PollingCluster(name string, resourceGroup string) string {
 			value, err := ioutil.ReadAll(resp.Body)
 			if err != nil {
 				log.WithFields(log.Fields{"error": err}).Error("error during cluster polling")
-				return createErrorResponse()
+				return nil, createErrorResponse()
 			}
 
 			response := Value{}
@@ -303,65 +303,18 @@ func PollingCluster(name string, resourceGroup string) string {
 				isReady = true
 				result.update(statusCode, response)
 			case stageFailed:
-				return createErrorResponse()
+				return nil, createErrorResponse()
 			default:
 				log.Info("Waiting...")
 				time.Sleep(waitInSeconds * time.Second)
 			}
 
 		default:
-			return createErrorResponseWithCode(statusCode)
+			return nil, createErrorResponseWithCode(statusCode)
 		}
 	}
 
-	return result.toString()
-}
-
-type ListInRG struct {
-	Value []struct {
-		ID       string `json:"id"`
-		Location string `json:"location"`
-		Name     string `json:"name"`
-		Properties struct {
-			AccessProfiles struct {
-				ClusterAdmin struct {
-					KubeConfig string `json:"kubeConfig"`
-				} `json:"clusterAdmin"`
-				ClusterUser struct {
-					KubeConfig string `json:"kubeConfig"`
-				} `json:"clusterUser"`
-			} `json:"accessProfiles"`
-			AgentPoolProfiles []struct {
-				Count          int    `json:"count"`
-				DNSPrefix      string `json:"dnsPrefix"`
-				Fqdn           string `json:"fqdn"`
-				Name           string `json:"name"`
-				OsType         string `json:"osType"`
-				Ports          []int  `json:"ports"`
-				StorageProfile string `json:"storageProfile"`
-				VMSize         string `json:"vmSize"`
-			} `json:"agentPoolProfiles"`
-			DNSPrefix         string `json:"dnsPrefix"`
-			Fqdn              string `json:"fqdn"`
-			KubernetesVersion string `json:"kubernetesVersion"`
-			LinuxProfile struct {
-				AdminUsername string `json:"adminUsername"`
-				SSH struct {
-					PublicKeys []struct {
-						KeyData string `json:"keyData"`
-					} `json:"publicKeys"`
-				} `json:"ssh"`
-			} `json:"linuxProfile"`
-			ProvisioningState string `json:"provisioningState"`
-			ServicePrincipalProfile struct {
-				ClientID          string      `json:"clientId"`
-				KeyVaultSecretRef interface{} `json:"keyVaultSecretRef"`
-				Secret            string      `json:"secret"`
-			} `json:"servicePrincipalProfile"`
-		} `json:"properties"`
-		Tags string `json:"tags"`
-		Type string `json:"type"`
-	} `json:"value"`
+	return &result, nil
 }
 
 type AzureListResponse struct {
@@ -395,10 +348,6 @@ type ListResponse struct {
 	Value      AzureListResponse `json:"message"`
 }
 
-type ResponseWithCode struct {
-	StatusCode int `json:"status_code"`
-}
-
 func (r AzureListResponse) toString() string {
 	jsonResponse, _ := json.Marshal(r)
 	return string(jsonResponse)
@@ -419,21 +368,15 @@ func (r *Response) update(code int, Value Value) {
 	r.StatusCode = code
 }
 
-func createErrorResponse() string {
+func createErrorResponse() *initapi.AzureErrorResponse {
 	return createErrorResponseWithCode(initapi.InternalErrorCode)
 }
 
-func createErrorResponseWithCode(code int) string {
-	errorResponse := ResponseWithCode{StatusCode: code}
-	return errorResponse.toString()
+func createErrorResponseWithCode(code int) *initapi.AzureErrorResponse {
+	return &initapi.AzureErrorResponse{StatusCode: code}
 }
 
 func (r ListResponse) toString() string {
-	jsonResponse, _ := json.Marshal(r)
-	return string(jsonResponse)
-}
-
-func (r ResponseWithCode) toString() string {
 	jsonResponse, _ := json.Marshal(r)
 	return string(jsonResponse)
 }
