@@ -1,4 +1,4 @@
-# Repo and maintenance moved to [Banzai Cloud](https://github.com/banzaicloud/azure-aks-client)
+# Repository permanently moved to [Banzai Cloud](https://github.com/banzaicloud/azure-aks-client)
 
 =====================================================================
 
