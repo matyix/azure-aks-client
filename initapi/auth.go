@@ -14,7 +14,10 @@ import (
 
 var sdk cluster.Sdk
 
-const InternalErrorCode = 500
+const (
+	InternalErrorCode = 500
+	BadRequest = 400
+)
 
 func init() {
 	// Log as JSON

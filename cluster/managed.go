@@ -4,6 +4,7 @@ import (
 	"github.com/banzaicloud/azure-aks-client/utils"
 	log "github.com/sirupsen/logrus"
 	"os"
+	"regexp"
 )
 
 func init() {
@@ -58,4 +59,26 @@ type CreateClusterRequest struct {
 	AgentCount        int
 	AgentName         string
 	KubernetesVersion string
+}
+
+func (c CreateClusterRequest) Validate() (bool, string) {
+
+	log.Info("Validate cluster name: ", c.Name)
+
+	msg := "Only numbers, lowercase letters and underscores are allowed under name property. In addition, the value cannot end with an underscore, and must also be less than 32 characters long."
+	emptyMsg := "The name should not be empty."
+	if len(c.Name) == 0 {
+		log.Info("Cluster name is empty")
+		return false, emptyMsg
+	} else if len(c.Name) >= 32 {
+		log.Info("Cluster name is greater than or equal 32")
+		return false, msg
+	}
+
+	if isMatch, _ := regexp.MatchString("^[a-z0-9_]{0,31}[a-z0-9]$", c.Name); !isMatch {
+		log.Info("Cluster name doesn't match with the regular expression")
+		return false, msg
+	}
+
+	return true, ""
 }

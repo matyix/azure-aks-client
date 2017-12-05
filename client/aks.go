@@ -111,6 +111,10 @@ func CreateCluster(request cluster.CreateClusterRequest) (*Response, *initapi.Az
 		return nil, &initapi.AzureErrorResponse{StatusCode: initapi.InternalErrorCode, Message: message}
 	}
 
+	if isValid, errMsg := request.Validate(); !isValid {
+		return nil, &initapi.AzureErrorResponse{StatusCode: initapi.BadRequest, Message: errMsg}
+	}
+
 	managedCluster := cluster.GetManagedCluster(request, clientId, secret)
 
 	pathParam := map[string]interface{}{
