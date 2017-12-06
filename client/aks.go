@@ -85,13 +85,25 @@ func GetCluster(name string, resourceGroup string) (*Response, *initapi.AzureErr
 		return nil, createErrorResponse()
 	}
 
-	v := Value{}
-	json.Unmarshal([]byte(value), &v)
+	if resp.StatusCode != initapi.OK {
+		// not ok, probably 404
+		type TempErrorResp struct {
+			Error struct {
+				Message string `json:"message"`
+			} `json:"error"`
+		}
 
-	response := Response{}
-	response.update(resp.StatusCode, v)
-
-	return &response, nil
+		errResp := TempErrorResp{}
+		json.Unmarshal([]byte(value), &errResp)
+		return nil, &initapi.AzureErrorResponse{StatusCode: resp.StatusCode, Message: errResp.Error.Message}
+	} else {
+		// everything is ok
+		v := Value{}
+		json.Unmarshal([]byte(value), &v)
+		response := Response{}
+		response.update(resp.StatusCode, v)
+		return &response, nil
+	}
 
 }
 
