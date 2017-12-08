@@ -26,7 +26,7 @@ func TestCreateCluster(t *testing.T) {
 	}
 
 	result := client.Response{}
-	value := client.CreateCluster(c)
+	value := client.CreateUpdateCluster(c)
 	json.Unmarshal([]byte (value), &result)
 
 	if result.StatusCode != 200 && result.StatusCode != 201 {
