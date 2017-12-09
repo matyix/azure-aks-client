@@ -311,7 +311,7 @@ func DeleteCluster(name string, resourceGroup string) (*Response, *initapi.Azure
 		return nil, createErrorResponseFromError(err)
 	}
 
-	if resp.StatusCode != initapi.OK && resp.StatusCode != initapi.NoContent {
+	if resp.StatusCode != initapi.OK && resp.StatusCode != initapi.NoContent && resp.StatusCode != initapi.Accepted {
 		errResp := initapi.CreateErrorFromValue(value)
 		log.Info("Delete cluster failed with message: ", errResp.Error.Message)
 		return nil, &initapi.AzureErrorResponse{StatusCode: resp.StatusCode, Message: errResp.Error.Message}
