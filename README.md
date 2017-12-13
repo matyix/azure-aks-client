@@ -98,7 +98,7 @@ Until the registration goes through all the zones and datacenters have a coffee.
 
 #### Validate, test the cluster
 
-Install the AKS CLI tool by running `az aks install-cli`. Get the credentials to the cluster by running `az aks get-credentials --resource-group YOUR_RG_NAME --name YOUR_AKS_CLUSTER_NAME`.
+After you have launched a Kubernetes cluster on AKS you can test/validate it by using the AKS CLI tool by running `az aks install-cli`. Get the credentials to the cluster by running `az aks get-credentials --resource-group YOUR_RG_NAME --name YOUR_AKS_CLUSTER_NAME`.
 
 You can now use **kubectl* to operate the cluster. Get the number of nodes and validate the result: 
 
