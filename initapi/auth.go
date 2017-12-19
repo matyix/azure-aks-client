@@ -8,6 +8,7 @@ import (
 	"github.com/Azure/go-autorest/autorest"
 	"github.com/Azure/go-autorest/autorest/azure"
 	"github.com/banzaicloud/azure-aks-client/cluster"
+	banzaiTypes "github.com/banzaicloud/banzai-types/components"
 	log "github.com/sirupsen/logrus"
 	"encoding/json"
 )
@@ -35,7 +36,7 @@ const azureClientSecret = "AZURE_CLIENT_SECRET"
 const azureSubscriptionId = "AZURE_SUBSCRIPTION_ID"
 const azureTenantId = "AZURE_TENANT_ID"
 
-func Authenticate() (*cluster.Sdk, *AzureErrorResponse) {
+func Authenticate() (*cluster.Sdk, *banzaiTypes.BanzaiResponse) {
 	clientId := os.Getenv(azureClientId)
 	clientSecret := os.Getenv(azureClientSecret)
 	subscriptionId := os.Getenv(azureSubscriptionId)
@@ -91,11 +92,6 @@ func GetSdk() *cluster.Sdk {
 	return &sdk
 }
 
-type AzureErrorResponse struct {
-	StatusCode int    `json:"status_code"`
-	Message    string `json:"message"`
-}
-
 type AzureServerError struct {
 	Message string `json:"message"`
 }
@@ -117,19 +113,14 @@ func CreateErrorFromValue(statusCode int, v []byte) AzureServerError {
 	}
 }
 
-func (e AzureErrorResponse) ToString() string {
-	jsonResponse, _ := json.Marshal(e)
-	return string(jsonResponse)
-}
-
-func CreateEnvErrorResponse(env string) *AzureErrorResponse {
+func CreateEnvErrorResponse(env string) *banzaiTypes.BanzaiResponse {
 	message := "Environmental variable is empty: " + env
 	log.WithFields(log.Fields{"error": "environmental_error"}).Error(message)
-	return &AzureErrorResponse{StatusCode: InternalErrorCode, Message: message}
+	return &banzaiTypes.BanzaiResponse{StatusCode: InternalErrorCode, Message: message}
 }
 
-func CreateAuthErrorResponse(err error) *AzureErrorResponse {
+func CreateAuthErrorResponse(err error) *banzaiTypes.BanzaiResponse {
 	errMsg := "Failed to authenticate with Azure"
 	log.WithFields(log.Fields{"Authentication error": err}).Error(errMsg)
-	return &AzureErrorResponse{StatusCode: InternalErrorCode, Message: errMsg}
+	return &banzaiTypes.BanzaiResponse{StatusCode: InternalErrorCode, Message: errMsg}
 }
