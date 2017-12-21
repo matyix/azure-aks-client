@@ -258,16 +258,16 @@ DELETE https://management.azure.com/subscriptions/
 	{resourceGroupName}/providers/Microsoft.ContainerService/managedClusters/{resourceName}?
 	api-version=2017-08-31
 */
-func DeleteCluster(name string, resourceGroup string) (*banzaiTypes.BanzaiResponse) {
+func DeleteCluster(name string, resourceGroup string) (*banzaiTypes.BanzaiResponse, bool) {
 
 	if azureSdk == nil {
-		return initError
+		return initError, false
 	}
 
 	if len(clientId) == 0 || len(secret) == 0 {
 		message := "ClientId or secret is empty"
 		banzaiUtils.LogError(banzaiConstants.TagDeleteCluster, "environmental_error")
-		return &banzaiTypes.BanzaiResponse{StatusCode: banzaiConstants.InternalErrorCode, Message: message}
+		return &banzaiTypes.BanzaiResponse{StatusCode: banzaiConstants.InternalErrorCode, Message: message}, false
 	}
 
 	pathParam := map[string]interface{}{
@@ -288,7 +288,7 @@ func DeleteCluster(name string, resourceGroup string) (*banzaiTypes.BanzaiRespon
 
 	if err != nil {
 		banzaiUtils.LogError(banzaiConstants.TagDeleteCluster, "error during delete cluster:", err)
-		return createErrorResponseFromError(err)
+		return createErrorResponseFromError(err), false
 	}
 
 	banzaiUtils.LogInfo(banzaiConstants.TagDeleteCluster, "Cluster delete start with name ", name, " in ", resourceGroup, " resource group")
@@ -296,7 +296,7 @@ func DeleteCluster(name string, resourceGroup string) (*banzaiTypes.BanzaiRespon
 	resp, err := autorest.SendWithSender(groupClient.Client, req)
 	if err != nil {
 		banzaiUtils.LogError(banzaiConstants.TagDeleteCluster, "error during delete cluster:", err)
-		return createErrorResponseFromError(err)
+		return createErrorResponseFromError(err), false
 	}
 
 	banzaiUtils.LogInfo(banzaiConstants.TagDeleteCluster, "Cluster delete status code: ", resp.StatusCode)
@@ -305,19 +305,19 @@ func DeleteCluster(name string, resourceGroup string) (*banzaiTypes.BanzaiRespon
 	value, err := ioutil.ReadAll(resp.Body)
 	if err != nil {
 		banzaiUtils.LogError(banzaiConstants.TagDeleteCluster, "error during delete cluster:", err)
-		return createErrorResponseFromError(err)
+		return createErrorResponseFromError(err), false
 	}
 
 	if resp.StatusCode != banzaiConstants.OK && resp.StatusCode != banzaiConstants.NoContent && resp.StatusCode != banzaiConstants.Accepted {
 		errResp := initapi.CreateErrorFromValue(resp.StatusCode, value)
 		banzaiUtils.LogInfo(banzaiConstants.TagDeleteCluster, "Delete cluster failed with message: ", errResp.Message)
-		return &banzaiTypes.BanzaiResponse{StatusCode: resp.StatusCode, Message: errResp.Message}
+		return &banzaiTypes.BanzaiResponse{StatusCode: resp.StatusCode, Message: errResp.Message}, false
 	}
 
 	banzaiUtils.LogInfo(banzaiConstants.TagDeleteCluster, "Delete cluster response ", string(value))
 
 	result := banzaiTypes.BanzaiResponse{StatusCode: resp.StatusCode}
-	return &result
+	return &result, true
 }
 
 /*
