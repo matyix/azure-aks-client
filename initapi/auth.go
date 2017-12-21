@@ -9,27 +9,12 @@ import (
 	"github.com/Azure/go-autorest/autorest/azure"
 	"github.com/banzaicloud/azure-aks-client/cluster"
 	banzaiTypes "github.com/banzaicloud/banzai-types/components"
-	log "github.com/sirupsen/logrus"
+	banzaiConstants "github.com/banzaicloud/banzai-types/constants"
+	banzaiUtils "github.com/banzaicloud/banzai-types/utils"
 	"encoding/json"
 )
 
 var sdk cluster.Sdk
-
-const (
-	OK                = 200
-	Created           = 201
-	Accepted          = 202
-	NoContent         = 204
-	InternalErrorCode = 500
-	BadRequest        = 400
-)
-
-func init() {
-	// Log as JSON
-	log.SetFormatter(&log.JSONFormatter{})
-	log.SetOutput(os.Stdout)
-	log.SetLevel(log.InfoLevel)
-}
 
 const azureClientId = "AZURE_CLIENT_ID"
 const azureClientSecret = "AZURE_CLIENT_SECRET"
@@ -97,7 +82,7 @@ type AzureServerError struct {
 }
 
 func CreateErrorFromValue(statusCode int, v []byte) AzureServerError {
-	if statusCode == BadRequest {
+	if statusCode == banzaiConstants.BadRequest {
 		ase := AzureServerError{}
 		json.Unmarshal([]byte(v), &ase)
 		return ase
@@ -115,12 +100,12 @@ func CreateErrorFromValue(statusCode int, v []byte) AzureServerError {
 
 func CreateEnvErrorResponse(env string) *banzaiTypes.BanzaiResponse {
 	message := "Environmental variable is empty: " + env
-	log.WithFields(log.Fields{"error": "environmental_error"}).Error(message)
-	return &banzaiTypes.BanzaiResponse{StatusCode: InternalErrorCode, Message: message}
+	banzaiUtils.LogError(banzaiConstants.TagInit, "environmental_error")
+	return &banzaiTypes.BanzaiResponse{StatusCode: banzaiConstants.InternalErrorCode, Message: message}
 }
 
 func CreateAuthErrorResponse(err error) *banzaiTypes.BanzaiResponse {
 	errMsg := "Failed to authenticate with Azure"
-	log.WithFields(log.Fields{"Authentication error": err}).Error(errMsg)
-	return &banzaiTypes.BanzaiResponse{StatusCode: InternalErrorCode, Message: errMsg}
+	banzaiUtils.LogError(banzaiConstants.TagAuth, "Authentication error:", err)
+	return &banzaiTypes.BanzaiResponse{StatusCode: banzaiConstants.InternalErrorCode, Message: errMsg}
 }
