@@ -71,3 +71,8 @@ func CheckEnvVar(envVars *map[string]string) error {
 	}
 	return nil
 }
+
+func S(input string) *string {
+	s := input
+	return &s
+}

@@ -5,7 +5,7 @@
 
 ### AKS client until Swagger/SDK is released
 
-This is a library to create Microsoft Managed Kubernetes clusters (**AKS**) on Azure cloud. it is a temporary solution until the following PR's are not merged upstream.
+This is a library to create Microsoft Managed Kubernetes clusters (**AKS**) on Azure cloud. It is a **temporary** solution until the following PR's are not merged upstream.
 
 _**For API Specification**: Go client is missing AKS until this [PR](https://github.com/Azure/azure-rest-api-specs/pull/1956) is merged in the API specification.
 Related [PR](https://github.com/Azure/azure-rest-api-specs/pull/1912) superseeded by the previos one._
@@ -103,7 +103,7 @@ Until the registration goes through all the zones and datacenters have a coffee.
 
 #### Validate, test the cluster
 
-Install the AKS CLI tool by running `az aks install-cli`. Get the credentials to the cluster by running `az aks get-credentials --resource-group YOUR_RG_NAME --name YOUR_AKS_CLUSTER_NAME`.
+After you have launched a Kubernetes cluster on AKS you can test/validate it by using the AKS CLI tool by running `az aks install-cli`. Get the credentials to the cluster by running `az aks get-credentials --resource-group YOUR_RG_NAME --name YOUR_AKS_CLUSTER_NAME`.
 
 You can now use **kubectl* to operate the cluster. Get the number of nodes and validate the result: 
 
