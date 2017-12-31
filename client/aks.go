@@ -39,45 +39,10 @@ GET https://management.azure.com/subscriptions/
  */
 func GetCluster(name string, resourceGroup string) (*banzaiTypesAzure.ResponseWithValue, *banzaiTypes.BanzaiResponse) {
 
-	if azureSdk == nil {
-		return nil, initError
+	resp, errAz := callAzureGetCluster(name, resourceGroup)
+	if errAz != nil {
+		return nil, errAz
 	}
-
-	if len(clientId) == 0 || len(secret) == 0 {
-		message := "ClientId or secret is empty"
-		banzaiUtils.LogError(banzaiConstants.TagGetCluster, "environmental_error")
-		return nil, &banzaiTypes.BanzaiResponse{StatusCode: banzaiConstants.InternalErrorCode, Message: message}
-	}
-
-	pathParam := map[string]interface{}{
-		"subscription-id": azureSdk.ServicePrincipal.SubscriptionID,
-		"resourceGroup":   resourceGroup,
-		"resourceName":    name}
-	queryParam := map[string]interface{}{"api-version": "2017-08-31"}
-
-	groupClient := *azureSdk.ResourceGroup
-
-	req, err := autorest.Prepare(&http.Request{},
-		groupClient.WithAuthorization(),
-		autorest.AsGet(),
-		autorest.WithBaseURL(BaseUrl),
-		autorest.WithPathParameters("/subscriptions/{subscription-id}/resourceGroups/{resourceGroup}/providers/Microsoft.ContainerService/managedClusters/{resourceName}", pathParam),
-		autorest.WithQueryParameters(queryParam))
-
-	if err != nil {
-		banzaiUtils.LogError(banzaiConstants.TagGetCluster, "error during listing clusters in ", resourceGroup, " resource group", err)
-		return nil, createErrorResponseFromError(err)
-	}
-
-	banzaiUtils.LogInfo(banzaiConstants.TagGetCluster, "Get cluster details with name: ", name, " in ", resourceGroup, " resource group", err)
-
-	resp, err := autorest.SendWithSender(groupClient.Client, req)
-	if err != nil {
-		banzaiUtils.LogError(banzaiConstants.TagGetCluster, "error during listing clusters in ", resourceGroup, " resource group:", err)
-		return nil, createErrorResponseFromError(err)
-	}
-
-	banzaiUtils.LogInfo(banzaiConstants.TagGetCluster, "Get Cluster response status code: ", resp.StatusCode)
 
 	value, err := ioutil.ReadAll(resp.Body)
 	if err != nil {
@@ -418,4 +383,103 @@ func createErrorResponseFromError(err error) *banzaiTypes.BanzaiResponse {
 		StatusCode: banzaiConstants.InternalErrorCode,
 		Message:    err.Error(),
 	}
+}
+
+/**
+Get kubernetes cluster config
+GET https://management.azure.com/subscriptions/
+	{subscriptionId}/resourceGroups/
+	{resourceGroupName}/providers/Microsoft.ContainerService/managedClusters/
+	{resourceName}?api-version=2017-08-31
+ */
+func GetClusterConfig(name, resourceGroup string) (*AzureConfig, *banzaiTypes.BanzaiResponse) {
+
+	resp, callErr := callAzureGetCluster(name, resourceGroup)
+	if callErr != nil {
+		return nil, callErr
+	}
+
+	value, err := ioutil.ReadAll(resp.Body)
+	if err != nil {
+		banzaiUtils.LogError(banzaiConstants.TagGetCluster, "error during get cluster in ", resourceGroup, " resource group:", err)
+		return nil, createErrorResponseFromError(err)
+	}
+
+	if resp.StatusCode != banzaiConstants.OK {
+		// not ok, probably 404
+		// todo set new banzai-types constants
+		errResp := initapi.CreateErrorFromValue(resp.StatusCode, value)
+		banzaiUtils.LogInfo(banzaiConstants.TagGetCluster, "Get k8s config failed with message: ", errResp.Message)
+		return nil, &banzaiTypes.BanzaiResponse{StatusCode: resp.StatusCode, Message: errResp.Message}
+	} else {
+		// everything is ok
+		// todo set new banzai-types struct
+		res := AzureConfig{}
+		json.Unmarshal([]byte(value), &res)
+		return &res, nil
+	}
+
+}
+
+func callAzureGetCluster(name, resourceGroup string) (*http.Response, *banzaiTypes.BanzaiResponse) {
+
+	if azureSdk == nil {
+		return nil, initError
+	}
+
+	if len(clientId) == 0 || len(secret) == 0 {
+		message := "ClientId or secret is empty"
+		banzaiUtils.LogError(banzaiConstants.TagGetCluster, "environmental_error")
+		return nil, &banzaiTypes.BanzaiResponse{StatusCode: banzaiConstants.InternalErrorCode, Message: message}
+	}
+
+	pathParam := map[string]interface{}{
+		"subscription-id": azureSdk.ServicePrincipal.SubscriptionID,
+		"resourceGroup":   resourceGroup,
+		"resourceName":    name}
+	queryParam := map[string]interface{}{"api-version": "2017-08-31"}
+
+	groupClient := *azureSdk.ResourceGroup
+
+	req, err := autorest.Prepare(&http.Request{},
+		groupClient.WithAuthorization(),
+		autorest.AsGet(),
+		autorest.WithBaseURL(BaseUrl),
+		autorest.WithPathParameters("/subscriptions/{subscription-id}/resourceGroups/{resourceGroup}/providers/Microsoft.ContainerService/managedClusters/{resourceName}", pathParam),
+		autorest.WithQueryParameters(queryParam))
+
+	if err != nil {
+		banzaiUtils.LogError(banzaiConstants.TagGetCluster, "error during get cluster in", resourceGroup, "resource group", err)
+		return nil, createErrorResponseFromError(err)
+	}
+
+	banzaiUtils.LogInfo(banzaiConstants.TagGetCluster, "Get cluster with name:", name, " in ", resourceGroup, "resource group")
+
+	resp, err := autorest.SendWithSender(groupClient.Client, req)
+	if err != nil {
+		banzaiUtils.LogError(banzaiConstants.TagGetCluster, "error during get clusters in", resourceGroup, "resource group:", err)
+		return nil, createErrorResponseFromError(err)
+	}
+
+	banzaiUtils.LogInfo(banzaiConstants.TagGetCluster, "Get Cluster response status code:", resp.StatusCode)
+	return resp, nil
+}
+
+type AzureConfig struct {
+	Location string `json:"location"`
+	Name     string `json:"name"`
+	Properties struct {
+		AccessProfiles struct {
+			ClusterAdmin struct {
+				KubeConfig string `json:"kubeConfig"`
+			} `json:"clusterAdmin"`
+			ClusterUser struct {
+				KubeConfig string `json:"kubeConfig"`
+			} `json:"clusterUser"`
+		} `json:"accessProfiles"`
+	} `json:"properties"`
+}
+
+func (a *AzureConfig) String() string {
+	return banzaiUtils.Convert2Json(a)
 }
