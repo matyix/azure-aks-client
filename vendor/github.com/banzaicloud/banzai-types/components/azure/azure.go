@@ -172,3 +172,15 @@ func (p *Properties) String() string {
 func (p *Profile) String() string {
 	return utils.Convert2Json(p)
 }
+
+type Config struct {
+	Location string `json:"location"`
+	Name     string `json:"name"`
+	Properties struct {
+		KubeConfig string `json:"kubeConfig"`
+	} `json:"properties"`
+}
+
+func (c *Config) String() string {
+	return utils.Convert2Json(c)
+}
