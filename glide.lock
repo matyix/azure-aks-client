@@ -1,5 +1,5 @@
 hash: 690e27fec80c53f0ae93c2cbe6a2582b744ab06452b409dfdb27ced1a1b71f80
-updated: 2018-01-06T17:06:00.57353+01:00
+updated: 2018-01-08T16:43:23.512399+01:00
 imports:
 - name: github.com/Azure/azure-sdk-for-go
   version: 57da6001a1d275435ae24b8a39c04828d9623321
@@ -7,7 +7,7 @@ imports:
   - arm/examples/helpers
   - arm/resources/resources
 - name: github.com/Azure/go-autorest
-  version: 809ed2ef5c4c9a60c3c2f3aa9cc11f3a7c2ce59d
+  version: 8c58b4788dedd95779efe0ac2055bb6a1b9b8e01
   subpackages:
   - autorest
   - autorest/adal
@@ -16,7 +16,7 @@ imports:
   - autorest/to
   - autorest/validation
 - name: github.com/banzaicloud/banzai-types
-  version: 50e7593471aa49bfd19e1f61506329d54e046e0a
+  version: 47585b6479d5195bfb59689a12ff37d874dceea7
   subpackages:
   - components
   - components/amazon
