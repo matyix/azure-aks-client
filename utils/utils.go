@@ -8,6 +8,9 @@ import (
 
 	"github.com/Azure/go-autorest/autorest/adal"
 	"github.com/Azure/go-autorest/autorest/azure"
+	banzaiConstants "github.com/banzaicloud/banzai-types/constants"
+	banzaiUtils "github.com/banzaicloud/banzai-types/utils"
+	banzaiTypes "github.com/banzaicloud/banzai-types/components"
 )
 
 const (
@@ -75,4 +78,39 @@ func CheckEnvVar(envVars *map[string]string) error {
 func S(input string) *string {
 	s := input
 	return &s
+}
+
+type AzureServerError struct {
+	Message string `json:"message"`
+}
+
+func CreateErrorFromValue(statusCode int, v []byte) AzureServerError {
+	if statusCode == banzaiConstants.BadRequest {
+		ase := AzureServerError{}
+		json.Unmarshal([]byte(v), &ase)
+		if len(ase.Message) != 0 {
+			return ase
+		}
+	}
+
+	type TempError struct {
+		Error struct {
+			Message string `json:"message"`
+		} `json:"error"`
+	}
+	tempError := TempError{}
+	json.Unmarshal([]byte(v), &tempError)
+	return AzureServerError{Message: tempError.Error.Message}
+}
+
+func CreateEnvErrorResponse(env string) *banzaiTypes.BanzaiResponse {
+	message := "Environmental variable is empty: " + env
+	banzaiUtils.LogError(banzaiConstants.TagInit, "environmental_error")
+	return &banzaiTypes.BanzaiResponse{StatusCode: banzaiConstants.InternalErrorCode, Message: message}
+}
+
+func CreateAuthErrorResponse(err error) *banzaiTypes.BanzaiResponse {
+	errMsg := "Failed to authenticate with Azure"
+	banzaiUtils.LogError(banzaiConstants.TagAuth, "Authentication error:", err)
+	return &banzaiTypes.BanzaiResponse{StatusCode: banzaiConstants.InternalErrorCode, Message: errMsg}
 }

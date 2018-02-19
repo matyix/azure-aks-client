@@ -1,13 +1,13 @@
 hash: 690e27fec80c53f0ae93c2cbe6a2582b744ab06452b409dfdb27ced1a1b71f80
-updated: 2018-01-08T16:43:23.512399+01:00
+updated: 2018-02-09T11:52:38.704637+01:00
 imports:
 - name: github.com/Azure/azure-sdk-for-go
-  version: 57da6001a1d275435ae24b8a39c04828d9623321
+  version: f111fc2fa3861c5fdced76cae4c9c71821969577
   subpackages:
   - arm/examples/helpers
   - arm/resources/resources
 - name: github.com/Azure/go-autorest
-  version: 8c58b4788dedd95779efe0ac2055bb6a1b9b8e01
+  version: fc3b03a2d2d1f43fad3007038bd16f044f870722
   subpackages:
   - autorest
   - autorest/adal
@@ -16,12 +16,13 @@ imports:
   - autorest/to
   - autorest/validation
 - name: github.com/banzaicloud/banzai-types
-  version: 47585b6479d5195bfb59689a12ff37d874dceea7
+  version: ac63fb9ecd6d7f4cfdc6242c8e4eb53377ecf293
   subpackages:
   - components
   - components/amazon
   - components/azure
   - components/database
+  - components/google
   - configuration
   - constants
   - database
@@ -60,7 +61,7 @@ imports:
 - name: github.com/pelletier/go-toml
   version: 0049ab3dc4c4c70a9eee23087437b69c0dde2130
 - name: github.com/pkg/errors
-  version: a22138067af1c4942683050411a841ade67fe1eb
+  version: 645ef00459ed84a119197bfb8d8205042c6df63d
 - name: github.com/pkg/sftp
   version: 4d0e916071f68db74f8a73926335f809396d6b42
 - name: github.com/sirupsen/logrus
@@ -79,23 +80,25 @@ imports:
 - name: github.com/spf13/viper
   version: 4dddf7c62e16bce5807744018f5b753bfe21bbd2
 - name: golang.org/x/crypto
-  version: 0fcca4842a8d74bfddc2c96a073bd2a4d2a7a2e8
+  version: 5119cf507ed5294cc409c092980c7497ee5d6fd2
   repo: https://github.com/golang/crypto.git
   vcs: git
   subpackages:
   - curve25519
   - ed25519
   - ed25519/internal/edwards25519
+  - internal/chacha20
   - pkcs12
+  - poly1305
   - ssh
   - ssh/terminal
 - name: golang.org/x/sys
-  version: 43eea11bc92608addb41b8a406b0407495c106f6
+  version: 7ddbeae9ae08c6a06a59597f0c9edbc5ff2444ce
   subpackages:
   - unix
   - windows
 - name: golang.org/x/text
-  version: e19ae1496984b1c655b8044a65c0300a3c878dd3
+  version: 4e4a3210bb54bb31f6ab2cdca2edcc0b50c420c1
   repo: https://github.com/golang/text.git
   vcs: git
   subpackages:

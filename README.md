@@ -103,9 +103,13 @@ Until the registration goes through all the zones and datacenters have a coffee.
 
 #### Validate, test the cluster
 
+You can launch an AKS cluster using the Portal or CLI - in case you are considering using [Pipeline](https://github.com/banzaicloud/pipeline) you can use the following REST API collections.
+
+[![Run in Postman](https://run.pstmn.io/button.svg)](https://www.getpostman.com/collections/56684ef61ee236e8f30d)
+
 After you have launched a Kubernetes cluster on AKS you can test/validate it by using the AKS CLI tool by running `az aks install-cli`. Get the credentials to the cluster by running `az aks get-credentials --resource-group YOUR_RG_NAME --name YOUR_AKS_CLUSTER_NAME`.
 
-You can now use **kubectl* to operate the cluster. Get the number of nodes and validate the result: 
+From now on it's business as usuall, you can use *kubectl* to operate the cluster. Get the number of nodes and validate the result: 
 
 ```
 matyix$ kubectl get nodes

@@ -13,6 +13,7 @@ import (
 	banzaiConstants "github.com/banzaicloud/banzai-types/constants"
 	banzaiTypes "github.com/banzaicloud/banzai-types/components"
 	banzaiTypesAzure "github.com/banzaicloud/banzai-types/components/azure"
+	"github.com/banzaicloud/azure-aks-client/utils"
 )
 
 func init() {
@@ -52,7 +53,7 @@ func GetCluster(name string, resourceGroup string) (*banzaiTypesAzure.ResponseWi
 
 	if resp.StatusCode != banzaiConstants.OK {
 		// not ok, probably 404
-		errResp := initapi.CreateErrorFromValue(resp.StatusCode, value)
+		errResp := utils.CreateErrorFromValue(resp.StatusCode, value)
 		banzaiUtils.LogInfo(banzaiConstants.TagGetCluster, "Get cluster failed with message: ", errResp.Message)
 		return nil, &banzaiTypes.BanzaiResponse{StatusCode: resp.StatusCode, Message: errResp.Message}
 	} else {
@@ -122,7 +123,7 @@ func ListClusters(resourceGroup string) (*banzaiTypesAzure.ListResponse, *banzai
 
 	if resp.StatusCode != banzaiConstants.OK {
 		// not ok, probably 404
-		errResp := initapi.CreateErrorFromValue(resp.StatusCode, value)
+		errResp := utils.CreateErrorFromValue(resp.StatusCode, value)
 		banzaiUtils.LogInfo(banzaiConstants.TagListClusters, "Listing clusters failed with message: ", errResp.Message)
 		return nil, &banzaiTypes.BanzaiResponse{StatusCode: resp.StatusCode, Message: errResp.Message}
 	}
@@ -203,7 +204,7 @@ func CreateUpdateCluster(request cluster.CreateClusterRequest) (*banzaiTypesAzur
 
 	if resp.StatusCode != banzaiConstants.OK && resp.StatusCode != banzaiConstants.Created {
 		// something went wrong, create failed
-		errResp := initapi.CreateErrorFromValue(resp.StatusCode, value)
+		errResp := utils.CreateErrorFromValue(resp.StatusCode, value)
 		banzaiUtils.LogInfo(banzaiConstants.TagCreateCluster, "Cluster creation failed with message: ", errResp.Message)
 		return nil, &banzaiTypes.BanzaiResponse{StatusCode: resp.StatusCode, Message: errResp.Message}
 	}
@@ -274,7 +275,7 @@ func DeleteCluster(name string, resourceGroup string) (*banzaiTypes.BanzaiRespon
 	}
 
 	if resp.StatusCode != banzaiConstants.OK && resp.StatusCode != banzaiConstants.NoContent && resp.StatusCode != banzaiConstants.Accepted {
-		errResp := initapi.CreateErrorFromValue(resp.StatusCode, value)
+		errResp := utils.CreateErrorFromValue(resp.StatusCode, value)
 		banzaiUtils.LogInfo(banzaiConstants.TagDeleteCluster, "Delete cluster failed with message: ", errResp.Message)
 		return &banzaiTypes.BanzaiResponse{StatusCode: resp.StatusCode, Message: errResp.Message}, false
 	}
@@ -369,7 +370,7 @@ func PollingCluster(name string, resourceGroup string) (*banzaiTypesAzure.Respon
 			}
 
 		default:
-			errResp := initapi.CreateErrorFromValue(resp.StatusCode, value)
+			errResp := utils.CreateErrorFromValue(resp.StatusCode, value)
 			banzaiUtils.LogInfo(banzaiConstants.TagGetClusterInfo, "Delete cluster failed with message: ", errResp.Message)
 			return nil, &banzaiTypes.BanzaiResponse{StatusCode: resp.StatusCode, Message: errResp.Message}
 		}
@@ -444,7 +445,7 @@ func GetClusterConfig(name, resourceGroup, roleName string) (*banzaiTypesAzure.C
 
 	if resp.StatusCode != banzaiConstants.OK {
 		// not ok, probably 404
-		errResp := initapi.CreateErrorFromValue(resp.StatusCode, value)
+		errResp := utils.CreateErrorFromValue(resp.StatusCode, value)
 		banzaiUtils.LogInfo(banzaiConstants.TagGetCluster, "Get k8s config failed with message: ", errResp.Message)
 		return nil, &banzaiTypes.BanzaiResponse{StatusCode: resp.StatusCode, Message: errResp.Message}
 	} else {
