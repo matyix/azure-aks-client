@@ -1,5 +1,5 @@
 hash: 922f99798e24efcdfe48d1499e0ed50c9ce94d54e6e941bee840440293cd733f
-updated: 2018-02-20T10:33:42.011288+01:00
+updated: 2018-02-20T16:27:04.916862+01:00
 imports:
 - name: github.com/Azure/azure-sdk-for-go
   version: 990842d1126ef6e294152c5f6f4e3f804a3cfd6d
@@ -16,7 +16,7 @@ imports:
   - autorest/to
   - autorest/validation
 - name: github.com/banzaicloud/banzai-types
-  version: 9a045ef408c38df68613ade9a6d8101a471c2f26
+  version: 2527c7ba68902891e40c776dfb69434bc2ce802b
   subpackages:
   - components/azure
   - constants
