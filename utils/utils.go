@@ -9,8 +9,6 @@ import (
 	"github.com/Azure/go-autorest/autorest/adal"
 	"github.com/Azure/go-autorest/autorest/azure"
 	banzaiConstants "github.com/banzaicloud/banzai-types/constants"
-	banzaiUtils "github.com/banzaicloud/banzai-types/utils"
-	banzaiTypes "github.com/banzaicloud/banzai-types/components"
 )
 
 
