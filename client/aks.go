@@ -316,7 +316,7 @@ func (a *AKSClient) PollingCluster(name string, resourceGroup string) (*banzaiTy
 				return nil, banzaiConstants.ErrorAzureCLusterStageFailed
 			default:
 				if logger != nil {
-					logger.Info(banzaiConstants.TagGetClusterInfo, "Waiting for cluster ready...")
+					logger.Info("Waiting for cluster ready...")
 				}
 				time.Sleep(waitInSeconds * time.Second)
 			}
