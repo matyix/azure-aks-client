@@ -3,13 +3,13 @@ package cluster
 import (
 	"os"
 
+	"fmt"
 	"github.com/Azure/azure-sdk-for-go/arm/examples/helpers"
 	"github.com/Azure/azure-sdk-for-go/arm/resources/resources"
 	"github.com/Azure/go-autorest/autorest"
+	"github.com/Azure/go-autorest/autorest/adal"
 	"github.com/Azure/go-autorest/autorest/azure"
 	"github.com/banzaicloud/azure-aks-client/utils"
-	"fmt"
-	"github.com/Azure/go-autorest/autorest/adal"
 )
 
 const AzureClientId = "AZURE_CLIENT_ID"
@@ -18,10 +18,10 @@ const AzureSubscriptionId = "AZURE_SUBSCRIPTION_ID"
 const AzureTenantId = "AZURE_TENANT_ID"
 
 type AKSCredential struct {
-	clientId string
-	clientSecret string
+	clientId       string
+	clientSecret   string
 	subscriptionId string
-	tenantId string
+	tenantId       string
 }
 
 type Sdk struct {
@@ -38,19 +38,19 @@ type ServicePrincipal struct {
 	AuthenticatedToken *adal.ServicePrincipalToken
 }
 
-func (a *AKSCredential)Validate() error {
+func (a *AKSCredential) Validate() error {
 	msg := "missing credential: "
 	if len(a.clientId) == 0 {
-		return utils.NewErr(msg+"clientId")
+		return utils.NewErr(msg + "clientId")
 	}
 	if len(a.clientSecret) == 0 {
-		return utils.NewErr(msg+"clientSecret")
+		return utils.NewErr(msg + "clientSecret")
 	}
 	if len(a.subscriptionId) == 0 {
-		return utils.NewErr(msg+"subscriptionId")
+		return utils.NewErr(msg + "subscriptionId")
 	}
 	if len(a.tenantId) == 0 {
-		return utils.NewErr(msg+"tenantId")
+		return utils.NewErr(msg + "tenantId")
 	}
 	return nil
 }
@@ -71,7 +71,6 @@ func Authenticate(credentials *AKSCredential) (*Sdk, error) {
 	if err != nil {
 		return nil, err
 	}
-
 
 	sdk := Sdk{
 		ServicePrincipal: &ServicePrincipal{

@@ -2,17 +2,17 @@ package client
 
 import (
 	"encoding/json"
+	"fmt"
 	"github.com/Azure/go-autorest/autorest"
 	"github.com/banzaicloud/azure-aks-client/cluster"
+	"github.com/banzaicloud/azure-aks-client/utils"
+	banzaiTypesAzure "github.com/banzaicloud/banzai-types/components/azure"
+	banzaiConstants "github.com/banzaicloud/banzai-types/constants"
+	"github.com/pkg/errors"
+	"github.com/sirupsen/logrus"
 	"io/ioutil"
 	"net/http"
 	"time"
-	banzaiConstants "github.com/banzaicloud/banzai-types/constants"
-	banzaiTypesAzure "github.com/banzaicloud/banzai-types/components/azure"
-	"github.com/banzaicloud/azure-aks-client/utils"
-	"github.com/pkg/errors"
-	"fmt"
-	"github.com/sirupsen/logrus"
 )
 
 const BaseUrl = "https://management.azure.com"
@@ -73,7 +73,7 @@ GET https://management.azure.com/subscriptions/
 	{subscriptionId}/resourceGroups/
 	{resourceGroupName}/providers/Microsoft.ContainerService/managedClusters/
 	{resourceName}?api-version=2017-08-31
- */
+*/
 func (a *AKSClient) GetCluster(name string, resourceGroup string) (*banzaiTypesAzure.ResponseWithValue, error) {
 
 	a.logInfof("Start getting aks cluster: %s [%s]", name, resourceGroup)
@@ -253,7 +253,7 @@ DELETE https://management.azure.com/subscriptions/
 	{resourceGroupName}/providers/Microsoft.ContainerService/managedClusters/{resourceName}?
 	api-version=2017-08-31
 */
-func (a *AKSClient) DeleteCluster(name string, resourceGroup string) (error) {
+func (a *AKSClient) DeleteCluster(name string, resourceGroup string) error {
 
 	a.logInfo("Start deleting cluster %s in %s resource group", name, resourceGroup)
 
@@ -306,7 +306,7 @@ GET https://management.azure.com/subscriptions/
 	{subscriptionId}/resourceGroups/
 	{resourceGroupName}/providers/Microsoft.ContainerService/managedClusters/{resourceName}?
 	api-version=2017-08-31
- */
+*/
 func (a *AKSClient) PollingCluster(name string, resourceGroup string) (*banzaiTypesAzure.ResponseWithValue, error) {
 
 	const stageSuccess = "Succeeded"
@@ -390,7 +390,7 @@ GET https://management.azure.com/subscriptions/
 	{subscriptionId}/resourceGroups/
 	{resourceGroupName}/providers/Microsoft.ContainerService/managedClusters/
 	{resourceName}?api-version=2017-08-31
- */
+*/
 func (a *AKSClient) GetClusterConfig(name, resourceGroup, roleName string) (*banzaiTypesAzure.Config, error) {
 
 	a.logInfo("Start getting %s cluster's config in %s, role name: %s", name, resourceGroup, roleName)
