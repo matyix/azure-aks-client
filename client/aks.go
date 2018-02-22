@@ -67,13 +67,9 @@ func getDefaultLogger() *logrus.Logger {
 	return logger
 }
 
-/**
-GetCluster gets the details of the managed cluster with a specified resource group and name.
-GET https://management.azure.com/subscriptions/
-	{subscriptionId}/resourceGroups/
-	{resourceGroupName}/providers/Microsoft.ContainerService/managedClusters/
-	{resourceName}?api-version=2017-08-31
-*/
+// GetCluster gets the details of the managed cluster with a specified resource group and name.
+//
+// GET https://management.azure.com/subscriptions/{subscriptionId}/resourceGroups/{resourceGroupName}/providers/Microsoft.ContainerService/managedClusters/{resourceName}?api-version=2017-08-31
 func (a *AKSClient) GetCluster(name string, resourceGroup string) (*banzaiTypesAzure.ResponseWithValue, error) {
 
 	a.logInfof("Start getting aks cluster: %s [%s]", name, resourceGroup)
@@ -107,13 +103,9 @@ func (a *AKSClient) GetCluster(name string, resourceGroup string) (*banzaiTypesA
 
 }
 
-/*
-ListClusters is listing AKS clusters in the specified subscription and resource group
-GET https://management.azure.com/subscriptions/
-	{subscriptionId}/resourceGroups/
-	{resourceGroupName}/providers/Microsoft.ContainerService/managedClusters?
-	api-version=2017-08-31
-*/
+// ListClusters is listing AKS clusters in the specified subscription and resource group
+//
+// GET https://management.azure.com/subscriptions/{subscriptionId}/resourceGroups/{resourceGroupName}/providers/Microsoft.ContainerService/managedClusters?api-version=2017-08-31
 func (a *AKSClient) ListClusters(resourceGroup string) (*banzaiTypesAzure.ListResponse, error) {
 
 	a.logInfof("Start getting cluster list from %s resource group", resourceGroup)
@@ -168,13 +160,9 @@ func (a *AKSClient) ListClusters(resourceGroup string) (*banzaiTypesAzure.ListRe
 	return &response, nil
 }
 
-/*
-CreateUpdateCluster creates or updates a managed cluster
-PUT https://management.azure.com/subscriptions/
-	{subscriptionId}/resourceGroups/
-	{resourceGroupName}/providers/Microsoft.ContainerService/managedClusters/{resourceName}?
-	api-version=2017-08-31sdk *cluster.Sdk
-*/
+// CreateUpdateCluster creates or updates a managed cluster
+//
+// PUT https://management.azure.com/subscriptions/{subscriptionId}/resourceGroups/ {resourceGroupName}/providers/Microsoft.ContainerService/managedClusters/{resourceName}?api-version=2017-08-31
 func (a *AKSClient) CreateUpdateCluster(request cluster.CreateClusterRequest) (*banzaiTypesAzure.ResponseWithValue, error) {
 
 	a.logInfo("Start create/update cluster")
@@ -246,13 +234,9 @@ func (a *AKSClient) CreateUpdateCluster(request cluster.CreateClusterRequest) (*
 	return &result, nil
 }
 
-/*
-DeleteCluster deletes a managed AKS on Azure
-DELETE https://management.azure.com/subscriptions/
-	{subscriptionId}/resourceGroups/
-	{resourceGroupName}/providers/Microsoft.ContainerService/managedClusters/{resourceName}?
-	api-version=2017-08-31
-*/
+// DeleteCluster deletes a managed AKS on Azure
+//
+// DELETE https://management.azure.com/subscriptions/{subscriptionId}/resourceGroups/{resourceGroupName}/providers/Microsoft.ContainerService/managedClusters/{resourceName}?api-version=2017-08-31
 func (a *AKSClient) DeleteCluster(name string, resourceGroup string) error {
 
 	a.logInfo("Start deleting cluster %s in %s resource group", name, resourceGroup)
@@ -300,13 +284,9 @@ func (a *AKSClient) DeleteCluster(name string, resourceGroup string) error {
 	return nil
 }
 
-/*
-PollingCluster polling AKS on Azure
-GET https://management.azure.com/subscriptions/
-	{subscriptionId}/resourceGroups/
-	{resourceGroupName}/providers/Microsoft.ContainerService/managedClusters/{resourceName}?
-	api-version=2017-08-31
-*/
+//PollingCluster polling AKS on Azure
+//
+//GET https://management.azure.com/subscriptions/{subscriptionId}/resourceGroups/{resourceGroupName}/providers/Microsoft.ContainerService/managedClusters/{resourceName}?api-version=2017-08-31
 func (a *AKSClient) PollingCluster(name string, resourceGroup string) (*banzaiTypesAzure.ResponseWithValue, error) {
 
 	const stageSuccess = "Succeeded"
@@ -384,13 +364,9 @@ func (a *AKSClient) PollingCluster(name string, resourceGroup string) (*banzaiTy
 	return &result, nil
 }
 
-/**
-Get kubernetes cluster config
-GET https://management.azure.com/subscriptions/
-	{subscriptionId}/resourceGroups/
-	{resourceGroupName}/providers/Microsoft.ContainerService/managedClusters/
-	{resourceName}?api-version=2017-08-31
-*/
+//Get kubernetes cluster config
+//
+//GET https://management.azure.com/subscriptions/{subscriptionId}/resourceGroups/{resourceGroupName}/providers/Microsoft.ContainerService/managedClusters/{resourceName}?api-version=2017-08-31
 func (a *AKSClient) GetClusterConfig(name, resourceGroup, roleName string) (*banzaiTypesAzure.Config, error) {
 
 	a.logInfo("Start getting %s cluster's config in %s, role name: %s", name, resourceGroup, roleName)

@@ -1,120 +1,110 @@
-package client_test
+package client
 
 import (
 	"testing"
-	"github.com/banzaicloud/azure-aks-client/client"
+	"github.com/sirupsen/logrus"
+	"reflect"
+	"os"
 	"github.com/banzaicloud/azure-aks-client/cluster"
 )
 
-const name = "test_cluster"
-const resourceGroup = "test_rg1"
-const roleName = "clusterUser"
+const (
+	testClientId       = "AzureClientId"
+	testClientSecret   = "AzureClientSecret"
+	testSubscriptionId = "AzureSubscriptionId"
+	testTenantId       = "AzureTenantId"
+)
 
-func TestCreateCluster(t *testing.T) {
+func TestDefaultLogger(t *testing.T) {
+	logger := getDefaultLogger()
 
-	t.Log(" --- [ Testing creation ] ---")
+	expLogger := logrus.New()
+	expLogger.Level = logrus.InfoLevel
+	expLogger.Formatter = new(logrus.JSONFormatter)
 
-	cl, err := client.GetAKSClient(nil)
-	if err != nil {
-		t.Errorf("Error during get aks client %v", err)
-		t.FailNow() // todo probald ki
+	if !reflect.DeepEqual(&expLogger, &logger) {
+		t.Errorf("Expexted logger %v, but got %v", expLogger, logger)
 	}
-	cl.With(nil) // logging out
-
-	c := cluster.CreateClusterRequest{
-		Name:              name,
-		Location:          "eastus",
-		VMSize:            "Standard_D2_v2",
-		ResourceGroup:     resourceGroup,
-		AgentCount:        1,
-		AgentName:         "agentpool1",
-		KubernetesVersion: "1.7.7",
-	}
-
-	if resp, err := cl.CreateUpdateCluster(c); err != nil {
-		t.Errorf("Error is NOT <nil>: %s.", err)
-	} else if resp.Value.Name != name {
-		t.Errorf("Expected cluster name is %v but got %v.", name, resp.Value.Name)
-	}
-
 }
 
-func TestPollingCluster(t *testing.T) {
+func TestGetAKSClient(t *testing.T) {
 
-	t.Log(" --- [ Testing polling ] ---")
-	cl, err := client.GetAKSClient(nil)
-	if err != nil {
-		t.Errorf("Error during get aks client %v", err)
-		t.FailNow() // todo probald ki
+	os.Setenv(cluster.AzureClientId, testClientId)
+	os.Setenv(cluster.AzureClientSecret, testClientSecret)
+	os.Setenv(cluster.AzureSubscriptionId, testSubscriptionId)
+	os.Setenv(cluster.AzureTenantId, testTenantId)
+
+	cases := []struct {
+		name              string
+		credentials       *cluster.AKSCredential
+		expectedClient    *AKSClient
+		withDefaultLogger bool
+	}{
+		{
+			name:        "credentials from env",
+			credentials: nil,
+			expectedClient: &AKSClient{
+				logger:   getDefaultLogger(),
+				clientId: testClientId,
+				secret:   testClientSecret,
+			},
+			withDefaultLogger: true,
+		},
+		{
+			name: "auth with credentials directly",
+			credentials: &cluster.AKSCredential{
+				ClientId:       testClientId,
+				ClientSecret:   testClientSecret,
+				SubscriptionId: testSubscriptionId,
+				TenantId:       testTenantId,
+			},
+			expectedClient: &AKSClient{
+				logger:   getDefaultLogger(),
+				clientId: testClientId,
+				secret:   testClientSecret,
+			},
+			withDefaultLogger: true,
+		},
+		{
+			name:        "with custom logger",
+			credentials: nil,
+			expectedClient: &AKSClient{
+				logger:   getCustomLogger(),
+				clientId: testClientId,
+				secret:   testClientSecret,
+			},
+			withDefaultLogger: false,
+		},
 	}
-	cl.With(nil) // logging out
 
-	if _, err := cl.PollingCluster(name, resourceGroup); err != nil {
-		t.Errorf("Error is NOT <nil>: %s. Polling failed.", err)
-	}
-
-}
-
-func TestListCluster(t *testing.T) {
-
-	t.Log(" --- [ Testing listing ] ---")
-	cl, err := client.GetAKSClient(nil)
-	if err != nil {
-		t.Errorf("Error during get aks client %v", err)
-		t.FailNow() // todo probald ki
-	}
-	cl.With(nil) // logging out
-
-	if resp, err := cl.ListClusters(resourceGroup); err != nil {
-		t.Errorf("Error is NOT <nil>: %s. Listing failed.", err)
-	} else {
-
-		isContains := false
-		for i := 0; i < len(resp.Value.Value); i++ {
-			v := resp.Value.Value[i]
-			if v.Name == name {
-				isContains = true
-				break
+	for _, tc := range cases {
+		t.Run(tc.name, func(t *testing.T) {
+			azureSdk, err := cluster.Authenticate(tc.credentials)
+			if err != nil {
+				t.Error("Error during authenticate")
+				t.FailNow()
 			}
-		}
+			tc.expectedClient.azureSdk = azureSdk
 
-		if !isContains {
-			t.Errorf("The list not contains %v in %v", name, resourceGroup)
-		}
+			if cl, err := GetAKSClient(nil); err != nil {
+				t.Errorf("Error during get aks client %v", err)
+			} else {
+				if !tc.withDefaultLogger {
+					cl.With(getCustomLogger())
+				}
+
+				if !reflect.DeepEqual(tc.expectedClient, cl) {
+					t.Errorf("Expected client %v, but got %v", tc.expectedClient, cl)
+				}
+			}
+		})
+
 	}
-
 }
 
-func TestGetK8sConfig(t *testing.T) {
-
-	t.Log(" --- [ Testing delete ] ---")
-
-	cl, err := client.GetAKSClient(nil)
-	if err != nil {
-		t.Errorf("Error during get aks client %v", err)
-		t.FailNow() // todo probald ki
-	}
-	cl.With(nil) // logging out
-
-	if _, err := cl.GetClusterConfig(name, resourceGroup, roleName); err != nil {
-		t.Errorf("Get cluster config failed: %v", err)
-		t.FailNow()
-	}
-
-}
-
-func TestDeleteCluster(t *testing.T) {
-
-	t.Log(" --- [ Testing delete ] ---")
-	cl, err := client.GetAKSClient(nil)
-	if err != nil {
-		t.Errorf("Error during get aks client %v", err)
-		t.FailNow() // todo probald ki
-	}
-	cl.With(nil) // logging out
-
-	if err := cl.DeleteCluster(name, resourceGroup); err != nil {
-		t.Errorf("Delete failed: %s.", err.Error())
-	}
-
+func getCustomLogger() *logrus.Logger {
+	log := logrus.New()
+	log.Level = logrus.ErrorLevel
+	log.Formatter = new(logrus.TextFormatter)
+	return log
 }
