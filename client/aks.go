@@ -369,7 +369,7 @@ func (a *AKSClient) PollingCluster(name string, resourceGroup string) (*banzaiTy
 //GET https://management.azure.com/subscriptions/{subscriptionId}/resourceGroups/{resourceGroupName}/providers/Microsoft.ContainerService/managedClusters/{resourceName}?api-version=2017-08-31
 func (a *AKSClient) GetClusterConfig(name, resourceGroup, roleName string) (*banzaiTypesAzure.Config, error) {
 
-	a.logInfo("Start getting %s cluster's config in %s, role name: %s", name, resourceGroup, roleName)
+	a.logInfof("Start getting %s cluster's config in %s, role name: %s", name, resourceGroup, roleName)
 
 	pathParam := map[string]interface{}{
 		"subscriptionId":    a.azureSdk.ServicePrincipal.SubscriptionID,
