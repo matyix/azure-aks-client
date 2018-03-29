@@ -12,9 +12,9 @@ import:
   - autorest/adal
   - autorest/azure
 - package: github.com/banzaicloud/banzai-types
-  version: refaktor
+  version: master
   subpackages:
   - components/azure
   - constants
 - package: github.com/pkg/errors
-  version: ^0.8.0
+  version: 0.8.0

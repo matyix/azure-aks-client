@@ -1,5 +1,5 @@
-hash: 922f99798e24efcdfe48d1499e0ed50c9ce94d54e6e941bee840440293cd733f
-updated: 2018-02-21T15:20:43.97552+01:00
+hash: 4285783a332906713d5882bfc1aaaa843227e7c7ee41b213ead058ce89515230
+updated: 2018-03-21T17:40:00.449247+01:00
 imports:
 - name: github.com/Azure/azure-sdk-for-go
   version: 990842d1126ef6e294152c5f6f4e3f804a3cfd6d
@@ -16,12 +16,23 @@ imports:
   - autorest/to
   - autorest/validation
 - name: github.com/banzaicloud/banzai-types
-  version: 3ad9e04427a6da7007fb0c59414f25d9ea842ec4
+  version: ca12487c8b036a81f64279b989688d3e6dc8dc2b
   subpackages:
   - components/azure
   - constants
 - name: github.com/dgrijalva/jwt-go
-  version: 01aeca54ebda6e0fbfafd0a524d234159c05ec20
+  version: 06ea1031745cb8b3dab3f6a236daf2b0aa468b7e
 - name: github.com/pkg/errors
   version: 645ef00459ed84a119197bfb8d8205042c6df63d
+- name: github.com/sirupsen/logrus
+  version: d682213848ed68c0a260ca37d6dd5ace8423f5ba
+- name: golang.org/x/crypto
+  version: 81e90905daefcd6fd217b62423c0908922eadb30
+  subpackages:
+  - ssh/terminal
+- name: golang.org/x/sys
+  version: 43eea11bc92608addb41b8a406b0407495c106f6
+  subpackages:
+  - unix
+  - windows
 testImports: []
