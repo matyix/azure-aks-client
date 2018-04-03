@@ -59,9 +59,11 @@ func (c CreateClusterRequest) Validate() error {
 	} else if len(c.Name) >= 32 {
 		return constants.ErrorAzureClusterNameTooLong
 	}
-	if isMatch, _ := regexp.MatchString("^[a-z0-9_]{0,31}[a-z0-9]$", c.Name); !isMatch {
+	if isMatch, _ := regexp.MatchString(RegexpForName, c.Name); !isMatch {
 		return constants.ErrorAzureClusterNameRegexp
 	}
 
 	return nil
 }
+
+const RegexpForName = "^[a-z0-9_]{0,31}[a-z0-9]$"
