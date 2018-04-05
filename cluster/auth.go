@@ -3,13 +3,12 @@ package cluster
 import (
 	"os"
 
-	"fmt"
-	"github.com/Azure/azure-sdk-for-go/arm/examples/helpers"
-	"github.com/Azure/azure-sdk-for-go/arm/resources/resources"
-	"github.com/Azure/go-autorest/autorest"
+	"github.com/Azure/azure-sdk-for-go/services/compute/mgmt/2018-04-01/compute"
+	"github.com/Azure/azure-sdk-for-go/services/containerservice/mgmt/2017-09-30/containerservice"
 	"github.com/Azure/go-autorest/autorest/adal"
-	"github.com/Azure/go-autorest/autorest/azure"
 	"github.com/banzaicloud/azure-aks-client/utils"
+	"github.com/Azure/go-autorest/autorest/azure/auth"
+	"fmt"
 )
 
 const AzureClientId = "AZURE_CLIENT_ID"
@@ -25,8 +24,9 @@ type AKSCredential struct {
 }
 
 type Sdk struct {
-	ServicePrincipal *ServicePrincipal
-	ResourceGroup    *resources.GroupsClient
+	ServicePrincipal     *ServicePrincipal
+	ManagedClusterClient *containerservice.ManagedClustersClient
+	VMSizeClient         *compute.VirtualMachineSizesClient
 }
 
 type ServicePrincipal struct {
@@ -86,17 +86,20 @@ func Authenticate(credentials *AKSCredential) (*Sdk, error) {
 			},
 		},
 	}
-
-	authenticatedToken, err := helpers.NewServicePrincipalTokenFromCredentials(sdk.ServicePrincipal.HashMap, azure.PublicCloud.ResourceManagerEndpoint)
+	authorizer, err := auth.NewClientCredentialsConfig(AKSCred.ClientId, AKSCred.ClientSecret, AKSCred.TenantId).Authorizer()
 	if err != nil {
 		return nil, utils.NewErr(fmt.Sprintf("authentication error: %s", err))
 	}
 
-	sdk.ServicePrincipal.AuthenticatedToken = authenticatedToken
+	subscriptionId := sdk.ServicePrincipal.SubscriptionID
+	managedClusterClient := containerservice.NewManagedClustersClient(subscriptionId)
+	vmSizesClient := compute.NewVirtualMachineSizesClient(subscriptionId)
 
-	resourceGroup := resources.NewGroupsClient(sdk.ServicePrincipal.SubscriptionID)
-	resourceGroup.Authorizer = autorest.NewBearerAuthorizer(sdk.ServicePrincipal.AuthenticatedToken)
-	sdk.ResourceGroup = &resourceGroup
+	managedClusterClient.Authorizer = authorizer
+	vmSizesClient.Authorizer = authorizer
+
+	sdk.ManagedClusterClient = &managedClusterClient
+	sdk.VMSizeClient = &vmSizesClient
 
 	return &sdk, nil
 }

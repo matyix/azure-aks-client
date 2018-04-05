@@ -1,44 +1,45 @@
 package cluster
 
 import (
-	"github.com/banzaicloud/azure-aks-client/utils"
 	"github.com/banzaicloud/banzai-types/constants"
 	"regexp"
+	"github.com/Azure/azure-sdk-for-go/services/containerservice/mgmt/2017-09-30/containerservice"
+	"github.com/banzaicloud/azure-aks-client/utils"
 )
 
-type ManagedCluster struct {
-	Location   string     `json:"location"`
-	Properties Properties `json:"properties"`
-}
-
-func GetManagedCluster(request CreateClusterRequest, clientId string, secret string) *ManagedCluster {
-	return &ManagedCluster{
-		Location: request.Location,
-		Properties: Properties{
-			DNSPrefix: "dnsprefix",
-			AgentPoolProfiles: []AgentPoolProfiles{
-				{
-					Count:  request.AgentCount,
-					Name:   request.AgentName,
-					VMSize: request.VMSize,
-				},
-			},
-			KubernetesVersion: request.KubernetesVersion,
-			ServicePrincipalProfile: ServicePrincipalProfile{
-				ClientID: utils.S(clientId),
-				Secret:   utils.S(secret),
-			},
-			LinuxProfile: LinuxProfile{
-				AdminUsername: "erospista",
-				SSH: SSH{
-					PublicKeys: &[]SSHPublicKey{
+func GetManagedCluster(request *CreateClusterRequest, clientId string, secret string) *containerservice.ManagedCluster {
+	agentCount := int32(request.AgentCount)
+	agentPoolProfiles := []containerservice.AgentPoolProfile{
+		{
+			Count:  &agentCount,
+			Name:   &request.AgentName,
+			VMSize: containerservice.VMSizeTypes(request.VMSize),
+		},
+	}
+	return &containerservice.ManagedCluster{
+		ManagedClusterProperties: &containerservice.ManagedClusterProperties{
+			ProvisioningState: nil,
+			DNSPrefix:         utils.S("dnsprefix"),
+			Fqdn:              nil,
+			KubernetesVersion: &request.KubernetesVersion,
+			AgentPoolProfiles: &agentPoolProfiles,
+			LinuxProfile: &containerservice.LinuxProfile{
+				AdminUsername: utils.S("erospista"),
+				SSH: &containerservice.SSHConfiguration{
+					PublicKeys: &[]containerservice.SSHPublicKey{
 						{
 							KeyData: utils.S(utils.ReadPubRSA("id_rsa.pub")),
 						},
 					},
 				},
 			},
+			ServicePrincipalProfile: &containerservice.ServicePrincipalProfile{
+				ClientID: &clientId,
+				Secret:   &secret,
+			},
 		},
+		Name:     &request.Name,
+		Location: &request.Location,
 	}
 }
 
