@@ -324,53 +324,19 @@ func (a *AKSClient) CreateUpdateCluster(request *cluster.CreateClusterRequest) (
 //// DeleteCluster deletes a managed AKS on Azure
 ////
 //// DELETE https://management.azure.com/subscriptions/{subscriptionId}/resourceGroups/{resourceGroupName}/providers/Microsoft.ContainerService/managedClusters/{resourceName}?api-version=2017-08-31
-//func (a *AKSClient) DeleteCluster(name string, resourceGroup string) error {
-//
-//	a.logInfof("Start deleting cluster %s in %s resource group", name, resourceGroup)
-//
-//	pathParam := map[string]interface{}{
-//		"subscription-id": a.azureSdk.ServicePrincipal.SubscriptionID,
-//		"resourceGroup":   resourceGroup,
-//		"resourceName":    name}
-//	queryParam := map[string]interface{}{"api-version": "2017-08-31"}
-//
-//	groupClient := *a.azureSdk.GroupsClient
-//
-//	a.logDebug("Create http request")
-//	req, err := autorest.Prepare(&http.Request{},
-//		groupClient.WithAuthorization(),
-//		autorest.AsDelete(),
-//		autorest.WithBaseURL(BaseUrl),
-//		autorest.WithPathParameters("/subscriptions/{subscription-id}/resourceGroups/{resourceGroup}/providers/Microsoft.ContainerService/managedClusters/{resourceName}", pathParam),
-//		autorest.WithQueryParameters(queryParam),
-//	)
-//
-//	if err != nil {
-//		return err
-//	}
-//
-//	a.logDebug("Send request to azure")
-//	resp, err := autorest.SendWithSender(groupClient.Client, req)
-//	if err != nil {
-//		return err
-//	}
-//
-//	defer resp.Body.Close()
-//	a.logDebugf("Read response body: %v", resp.Body)
-//	value, err := ioutil.ReadAll(resp.Body)
-//	if err != nil {
-//		return err
-//	}
-//
-//	a.logInfof("Status code: %d", resp.StatusCode)
-//	if resp.StatusCode != http.StatusOK && resp.StatusCode != http.StatusNoContent && resp.StatusCode != http.StatusAccepted {
-//		err := utils.CreateErrorFromValue(resp.StatusCode, value)
-//		return err
-//	}
-//
-//	return nil
-//}
-//
+func (a *AKSClient) DeleteCluster(name string, resourceGroup string) error {
+	a.logInfof("Start deleting cluster %s in %s resource group", name, resourceGroup)
+	a.logDebug("Send request to azure")
+	response, err := a.azureSdk.ManagedClusterClient.Delete(context.Background(), resourceGroup, name)
+	if err != nil {
+		return err
+	}
+
+	a.logInfof("Status code: %d", response.Response().StatusCode)
+
+	return nil
+}
+
 ////PollingCluster polling AKS on Azure
 ////
 ////GET https://management.azure.com/subscriptions/{subscriptionId}/resourceGroups/{resourceGroupName}/providers/Microsoft.ContainerService/managedClusters/{resourceName}?api-version=2017-08-31
@@ -427,58 +393,29 @@ func (a *AKSClient) PollingCluster(name string, resourceGroup string) (*banzaiTy
 ////Get kubernetes cluster config
 ////
 ////GET https://management.azure.com/subscriptions/{subscriptionId}/resourceGroups/{resourceGroupName}/providers/Microsoft.ContainerService/managedClusters/{resourceName}?api-version=2017-08-31
-//func (a *AKSClient) GetClusterConfig(name, resourceGroup, roleName string) (*banzaiTypesAzure.Config, error) {
-//
-//	a.logInfof("Start getting %s cluster's config in %s, role name: %s", name, resourceGroup, roleName)
-//
-//	pathParam := map[string]interface{}{
-//		"subscriptionId":    a.azureSdk.ServicePrincipal.SubscriptionID,
-//		"resourceGroupName": resourceGroup,
-//		"resourceName":      name,
-//		"roleName":          roleName,
-//	}
-//	queryParam := map[string]interface{}{"api-version": "2017-08-31"}
-//
-//	groupClient := *a.azureSdk.GroupsClient
-//
-//	a.logDebug("Create http request")
-//	req, err := autorest.Prepare(&http.Request{},
-//		groupClient.WithAuthorization(),
-//		autorest.AsGet(),
-//		autorest.WithBaseURL(BaseUrl),
-//		autorest.WithPathParameters("/subscriptions/{subscriptionId}/resourceGroups/{resourceGroupName}/providers/Microsoft.ContainerService/managedClusters/{resourceName}/accessProfiles/{roleName}", pathParam),
-//		autorest.WithQueryParameters(queryParam))
-//
-//	if err != nil {
-//		return nil, err
-//	}
-//
-//	a.logDebug("Send request to azure")
-//	resp, err := autorest.SendWithSender(groupClient.Client, req)
-//	if err != nil {
-//		return nil, err
-//	}
-//
-//	a.logDebugf("Read response body: %v", resp.Body)
-//	value, err := ioutil.ReadAll(resp.Body)
-//	if err != nil {
-//		return nil, err
-//	}
-//
-//	a.logInfof("Status code: %d", resp.StatusCode)
-//	if resp.StatusCode != http.StatusOK {
-//		// not ok, probably 404
-//		err := utils.CreateErrorFromValue(resp.StatusCode, value)
-//		return nil, err
-//	} else {
-//		// everything is ok
-//		a.logInfo("Create response model")
-//		res := banzaiTypesAzure.Config{}
-//		json.Unmarshal([]byte(value), &res)
-//		return &res, nil
-//	}
-//
-//}
+func (a *AKSClient) GetClusterConfig(name, resourceGroup, roleName string) (*banzaiTypesAzure.Config, error) {
+
+	a.logInfof("Start getting %s cluster's config in %s, role name: %s", name, resourceGroup, roleName)
+
+	a.logDebug("Send request to azure")
+	profile, err := a.azureSdk.ManagedClusterClient.GetAccessProfiles(context.Background(), resourceGroup, name, roleName)
+	if err != nil {
+		return nil, err
+	}
+
+	a.logInfof("Status code: %d", profile.StatusCode)
+	a.logInfo("Create response model")
+	return &banzaiTypesAzure.Config{
+		Location: *profile.Location,
+		Name:     *profile.Name,
+		Properties: struct {
+			KubeConfig string `json:"kubeConfig"`
+		}{
+			KubeConfig: string(*profile.KubeConfig),
+		},
+	}, nil
+}
+
 //
 //func (a *AKSClient) callAzureGetCluster(name, resourceGroup string) (*http.Response, error) {
 //
