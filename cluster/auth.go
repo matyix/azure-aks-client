@@ -6,6 +6,7 @@ import (
 	"fmt"
 	"github.com/Azure/azure-sdk-for-go/services/compute/mgmt/2018-04-01/compute"
 	"github.com/Azure/azure-sdk-for-go/services/containerservice/mgmt/2017-09-30/containerservice"
+	"github.com/Azure/azure-sdk-for-go/services/resources/mgmt/2016-06-01/subscriptions"
 	"github.com/Azure/go-autorest/autorest/adal"
 	"github.com/Azure/go-autorest/autorest/azure/auth"
 	"github.com/banzaicloud/azure-aks-client/utils"
@@ -27,6 +28,7 @@ type Sdk struct {
 	ServicePrincipal     *ServicePrincipal
 	ManagedClusterClient *containerservice.ManagedClustersClient
 	VMSizeClient         *compute.VirtualMachineSizesClient
+	SubscriptionsClient  *subscriptions.Client
 }
 
 type ServicePrincipal struct {
@@ -94,12 +96,15 @@ func Authenticate(credentials *AKSCredential) (*Sdk, error) {
 	subscriptionId := sdk.ServicePrincipal.SubscriptionID
 	managedClusterClient := containerservice.NewManagedClustersClient(subscriptionId)
 	vmSizesClient := compute.NewVirtualMachineSizesClient(subscriptionId)
+	subscriptionsClient := subscriptions.NewClient()
 
 	managedClusterClient.Authorizer = authorizer
 	vmSizesClient.Authorizer = authorizer
+	subscriptionsClient.Authorizer = authorizer
 
 	sdk.ManagedClusterClient = &managedClusterClient
 	sdk.VMSizeClient = &vmSizesClient
+	sdk.SubscriptionsClient = &subscriptionsClient
 
 	return &sdk, nil
 }

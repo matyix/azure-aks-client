@@ -4,7 +4,6 @@ import (
 	"context"
 	"encoding/json"
 	"fmt"
-	"github.com/Azure/azure-sdk-for-go/services/compute/mgmt/2018-04-01/compute"
 	"github.com/Azure/azure-sdk-for-go/services/containerservice/mgmt/2017-09-30/containerservice"
 	"github.com/banzaicloud/azure-aks-client/cluster"
 	"github.com/banzaicloud/azure-aks-client/utils"
@@ -268,10 +267,8 @@ func (a *AKSClient) GetClusterConfig(name, resourceGroup, roleName string) (*ban
 // GetVmSizes lists all available virtual machine sizes for a subscription in a location.
 func (a *AKSClient) GetVmSizes(location string) ([]string, error) {
 
-	client := compute.NewVirtualMachineSizesClient(a.azureSdk.ServicePrincipal.SubscriptionID)
-
 	a.logInfo("Start listing vm sizes")
-	resp, err := client.List(context.Background(), location)
+	resp, err := a.azureSdk.VMSizeClient.List(context.Background(), location)
 	if err != nil {
 		return nil, err
 	}
@@ -281,6 +278,23 @@ func (a *AKSClient) GetVmSizes(location string) ([]string, error) {
 		sizes = append(sizes, *vm.Name)
 	}
 	return sizes, nil
+}
+
+// GetLocations returns all the locations that are available for resource providers
+func (a *AKSClient) GetLocations() ([]string, error) {
+
+	a.logInfo("Start listing locations")
+	resp, err := a.azureSdk.SubscriptionsClient.ListLocations(context.Background(), a.azureSdk.ServicePrincipal.SubscriptionID)
+	if err != nil {
+		return nil, err
+	}
+
+	var locations []string
+	for _, loc := range *resp.Value {
+		locations = append(locations, *loc.Name)
+	}
+
+	return locations, nil
 }
 
 func (a *AKSClient) logDebug(args ...interface{}) {
