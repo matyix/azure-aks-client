@@ -3,12 +3,12 @@ package cluster
 import (
 	"os"
 
+	"fmt"
 	"github.com/Azure/azure-sdk-for-go/services/compute/mgmt/2018-04-01/compute"
 	"github.com/Azure/azure-sdk-for-go/services/containerservice/mgmt/2017-09-30/containerservice"
 	"github.com/Azure/go-autorest/autorest/adal"
-	"github.com/banzaicloud/azure-aks-client/utils"
 	"github.com/Azure/go-autorest/autorest/azure/auth"
-	"fmt"
+	"github.com/banzaicloud/azure-aks-client/utils"
 )
 
 const AzureClientId = "AZURE_CLIENT_ID"

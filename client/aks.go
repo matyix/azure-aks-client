@@ -1,19 +1,19 @@
 package client
 
 import (
-	banzaiTypesAzure "github.com/banzaicloud/banzai-types/components/azure"
-	banzaiConstants "github.com/banzaicloud/banzai-types/constants"
+	"context"
+	"encoding/json"
+	"fmt"
+	"github.com/Azure/azure-sdk-for-go/services/compute/mgmt/2018-04-01/compute"
+	"github.com/Azure/azure-sdk-for-go/services/containerservice/mgmt/2017-09-30/containerservice"
 	"github.com/banzaicloud/azure-aks-client/cluster"
 	"github.com/banzaicloud/azure-aks-client/utils"
-	"github.com/sirupsen/logrus"
-	"github.com/Azure/azure-sdk-for-go/services/compute/mgmt/2018-04-01/compute"
-	"context"
+	banzaiTypesAzure "github.com/banzaicloud/banzai-types/components/azure"
+	banzaiConstants "github.com/banzaicloud/banzai-types/constants"
 	"github.com/go-errors/errors"
+	"github.com/sirupsen/logrus"
 	"io/ioutil"
-	"fmt"
-	"encoding/json"
 	"net/http"
-	"github.com/Azure/azure-sdk-for-go/services/containerservice/mgmt/2017-09-30/containerservice"
 	"time"
 )
 
@@ -69,9 +69,7 @@ func getDefaultLogger() *logrus.Logger {
 	return logger
 }
 
-//// GetCluster gets the details of the managed cluster with a specified resource group and name.
-////
-//// GET https://management.azure.com/subscriptions/{subscriptionId}/resourceGroups/{resourceGroupName}/providers/Microsoft.ContainerService/managedClusters/{resourceName}?api-version=2017-08-31
+// GetCluster gets the details of the managed cluster with a specified resource group and name.
 func (a *AKSClient) GetCluster(name string, resourceGroup string) (*banzaiTypesAzure.ResponseWithValue, error) {
 
 	a.logInfof("Start getting aks cluster: %s [%s]", name, resourceGroup)
@@ -89,41 +87,8 @@ func (a *AKSClient) GetCluster(name string, resourceGroup string) (*banzaiTypesA
 	}, nil
 }
 
-//
-//	a.logInfof("Start getting aks cluster: %s [%s]", name, resourceGroup)
-//
-//	resp, errAz := a.callAzureGetCluster(name, resourceGroup)
-//	if errAz != nil {
-//		return nil, errAz
-//	}
-//
-//	a.logDebugf("Read body: %v", resp.Body)
-//	value, err := ioutil.ReadAll(resp.Body)
-//	if err != nil {
-//		return nil, errors.Wrap(err, fmt.Sprintf("error during get cluster in %s resource group", resourceGroup))
-//	}
-//
-//	a.logInfof("Status code: %d", resp.StatusCode)
-//
-//	if resp.StatusCode != http.StatusOK {
-//		// not ok, probably 404
-//		err := utils.CreateErrorFromValue(resp.StatusCode, value)
-//		return nil, err
-//	} else {
-//		// everything is ok
-//		a.logDebug("Create response model")
-//		v := banzaiTypesAzure.Value{}
-//		json.Unmarshal([]byte(value), &v)
-//		response := banzaiTypesAzure.ResponseWithValue{}
-//		response.Update(resp.StatusCode, v)
-//		return &response, nil
-//	}
-//
-//}
-//
-//// ListClusters is listing AKS clusters in the specified subscription and resource group
-////
-//// GET https://management.azure.com/subscriptions/{subscriptionId}/resourceGroups/{resourceGroupName}/providers/Microsoft.ContainerService/managedClusters?api-version=2017-08-31
+// ListClusters gets a list of managed clusters in the specified subscription. The operation returns properties of each managed
+// cluster.
 func (a *AKSClient) ListClusters(resourceGroup string) (*banzaiTypesAzure.ListResponse, error) {
 	a.logInfof("Start getting cluster list from %s resource group", resourceGroup)
 
@@ -141,6 +106,7 @@ func (a *AKSClient) ListClusters(resourceGroup string) (*banzaiTypesAzure.ListRe
 	return &response, nil
 }
 
+// convertManagedClustersToValues returns []Value with the managed clusters properties
 func convertManagedClustersToValues(managedCluster []containerservice.ManagedCluster) []banzaiTypesAzure.Value {
 	var values []banzaiTypesAzure.Value
 	for _, mc := range managedCluster {
@@ -149,6 +115,7 @@ func convertManagedClustersToValues(managedCluster []containerservice.ManagedClu
 	return values
 }
 
+// convertManagedClusterToValue returns Value with the ManagedCluster properties
 func convertManagedClusterToValue(managedCluster *containerservice.ManagedCluster) *banzaiTypesAzure.Value {
 	return &banzaiTypesAzure.Value{
 		Id:         *managedCluster.ID,
@@ -158,62 +125,8 @@ func convertManagedClusterToValue(managedCluster *containerservice.ManagedCluste
 	}
 }
 
-//
-//	a.logInfof("Start getting cluster list from %s resource group", resourceGroup)
-//
-//	pathParam := map[string]interface{}{
-//		"subscription-id": a.azureSdk.ServicePrincipal.SubscriptionID,
-//		"resourceGroup":   resourceGroup}
-//	queryParam := map[string]interface{}{"api-version": "2017-08-31"}
-//
-//	groupClient := *a.azureSdk.GroupsClient
-//
-//	a.logDebug("Create request")
-//	req, err := autorest.Prepare(&http.Request{},
-//		groupClient.WithAuthorization(),
-//		autorest.AsGet(),
-//		autorest.WithBaseURL(BaseUrl),
-//		autorest.WithPathParameters("/subscriptions/{subscription-id}/resourceGroups/{resourceGroup}/providers/Microsoft.ContainerService/managedClusters", pathParam),
-//		autorest.WithQueryParameters(queryParam))
-//
-//	if err != nil {
-//		msg := fmt.Sprintf("error during listing clusters in %s resource group: %v", resourceGroup, err)
-//		return nil, utils.NewErr(msg)
-//	}
-//
-//	a.logDebug("Send http request to azure")
-//
-//	resp, err := autorest.SendWithSender(groupClient.Client, req)
-//	if err != nil {
-//		msg := fmt.Sprintf("error during listing clusters in %s resource group: %v", resourceGroup, err)
-//		return nil, utils.NewErr(msg)
-//	}
-//
-//	a.logDebugf("Read response body %v", resp.Body)
-//	value, err := ioutil.ReadAll(resp.Body)
-//	if err != nil {
-//		msg := fmt.Sprintf("error during listing clusters in %s resource group: %v", resourceGroup, err)
-//		return nil, utils.NewErr(msg)
-//	}
-//
-//	a.logInfof("Status code %d", resp.StatusCode)
-//
-//	if resp.StatusCode != http.StatusOK {
-//		// not ok, probably 404
-//		return nil, utils.CreateErrorFromValue(resp.StatusCode, value)
-//	}
-//
-//	a.logInfo("Create response model")
-//
-//	azureListResponse := banzaiTypesAzure.Values{}
-//	json.Unmarshal([]byte(value), &azureListResponse)
-//	response := banzaiTypesAzure.ListResponse{StatusCode: resp.StatusCode, Value: azureListResponse}
-//	return &response, nil
-//}
-//
-//// CreateUpdateCluster creates or updates a managed cluster
-////
-//// PUT https://management.azure.com/subscriptions/{subscriptionId}/resourceGroups/ {resourceGroupName}/providers/Microsoft.ContainerService/managedClusters/{resourceName}?api-version=2017-08-31
+// CreateUpdateCluster creates or updates a managed cluster with the specified configuration for agents and Kubernetes
+// version.
 func (a *AKSClient) CreateUpdateCluster(request *cluster.CreateClusterRequest) (*banzaiTypesAzure.ResponseWithValue, error) {
 
 	if request == nil {
@@ -264,66 +177,7 @@ func (a *AKSClient) CreateUpdateCluster(request *cluster.CreateClusterRequest) (
 	}, nil
 }
 
-//	pathParam := map[string]interface{}{
-//		"subscription-id": a.azureSdk.ServicePrincipal.SubscriptionID,
-//		"resourceGroup":   request.ResourceGroup,
-//		"resourceName":    request.Name}
-//	queryParam := map[string]interface{}{"api-version": "2017-08-31"}
-//
-//	groupClient := *a.azureSdk.GroupsClient
-//
-//	a.logDebug("Create http request")
-//	req, err := autorest.Prepare(&http.Request{},
-//		groupClient.WithAuthorization(),
-//		autorest.AsPut(),
-//		autorest.WithBaseURL(BaseUrl),
-//		autorest.WithPathParameters("/subscriptions/{subscription-id}/resourceGroups/{resourceGroup}/providers/Microsoft.ContainerService/managedClusters/{resourceName}", pathParam),
-//		autorest.WithQueryParameters(queryParam),
-//		autorest.WithJSON(managedCluster),
-//		autorest.AsContentType("application/json"),
-//	)
-//	if err != nil {
-//		return nil, errors.New(fmt.Sprintf("Error during create/update request %v", err))
-//	}
-//
-//	_, err = json.Marshal(managedCluster)
-//	if err != nil {
-//		msg := fmt.Sprint("error during JSON marshal: ", err)
-//		return nil, utils.NewErr(msg)
-//	}
-//
-//	a.logDebug("Send request to azure")
-//	resp, err := autorest.SendWithSender(groupClient.Client, req)
-//	if err != nil {
-//		msg := fmt.Sprint("error during cluster creation: ", err)
-//		return nil, utils.NewErr(msg)
-//	}
-//
-//	defer resp.Body.Close()
-//	a.logDebugf("Read response body: %v", resp.Body)
-//	value, err := ioutil.ReadAll(resp.Body)
-//	if err != nil {
-//		msg := fmt.Sprint("error during cluster creation:", err)
-//		return nil, utils.NewErr(msg)
-//	}
-//
-//	a.logInfo("Status code: %d", resp.StatusCode)
-//	if resp.StatusCode != http.StatusOK && resp.StatusCode != http.StatusCreated {
-//		// something went wrong, create failed
-//		errResp := utils.CreateErrorFromValue(resp.StatusCode, value)
-//		return nil, errResp
-//	}
-//
-//	a.logInfo("Create response model")
-//	v := banzaiTypesAzure.Value{}
-//	json.Unmarshal([]byte(value), &v)
-//	result := banzaiTypesAzure.ResponseWithValue{StatusCode: resp.StatusCode, Value: v}
-//	return &result, nil
-//}
-//
-//// DeleteCluster deletes a managed AKS on Azure
-////
-//// DELETE https://management.azure.com/subscriptions/{subscriptionId}/resourceGroups/{resourceGroupName}/providers/Microsoft.ContainerService/managedClusters/{resourceName}?api-version=2017-08-31
+// DeleteCluster deletes the managed cluster with a specified resource group and name.
 func (a *AKSClient) DeleteCluster(name string, resourceGroup string) error {
 	a.logInfof("Start deleting cluster %s in %s resource group", name, resourceGroup)
 	a.logDebug("Send request to azure")
@@ -337,9 +191,7 @@ func (a *AKSClient) DeleteCluster(name string, resourceGroup string) error {
 	return nil
 }
 
-////PollingCluster polling AKS on Azure
-////
-////GET https://management.azure.com/subscriptions/{subscriptionId}/resourceGroups/{resourceGroupName}/providers/Microsoft.ContainerService/managedClusters/{resourceName}?api-version=2017-08-31
+// PollingCluster polls until the cluster ready or an error occurs
 func (a *AKSClient) PollingCluster(name string, resourceGroup string) (*banzaiTypesAzure.ResponseWithValue, error) {
 	const stageSuccess = "Succeeded"
 	const stageFailed = "Failed"
@@ -389,10 +241,7 @@ func (a *AKSClient) PollingCluster(name string, resourceGroup string) (*banzaiTy
 	return &result, nil
 }
 
-//
-////Get kubernetes cluster config
-////
-////GET https://management.azure.com/subscriptions/{subscriptionId}/resourceGroups/{resourceGroupName}/providers/Microsoft.ContainerService/managedClusters/{resourceName}?api-version=2017-08-31
+// GetClusterConfig gets the given cluster kubeconfig
 func (a *AKSClient) GetClusterConfig(name, resourceGroup, roleName string) (*banzaiTypesAzure.Config, error) {
 
 	a.logInfof("Start getting %s cluster's config in %s, role name: %s", name, resourceGroup, roleName)
@@ -416,38 +265,7 @@ func (a *AKSClient) GetClusterConfig(name, resourceGroup, roleName string) (*ban
 	}, nil
 }
 
-//
-//func (a *AKSClient) callAzureGetCluster(name, resourceGroup string) (*http.Response, error) {
-//
-//	pathParam := map[string]interface{}{
-//		"subscription-id": a.azureSdk.ServicePrincipal.SubscriptionID,
-//		"resourceGroup":   resourceGroup,
-//		"resourceName":    name}
-//	queryParam := map[string]interface{}{"api-version": "2017-08-31"}
-//
-//	groupClient := *a.azureSdk.groupsClient
-//
-//	a.logDebug("Create http request")
-//	req, err := autorest.Prepare(&http.Request{},
-//		groupClient.WithAuthorization(),
-//		autorest.AsGet(),
-//		autorest.WithBaseURL(BaseUrl),
-//		autorest.WithPathParameters("/subscriptions/{subscription-id}/resourceGroups/{resourceGroup}/providers/Microsoft.ContainerService/managedClusters/{resourceName}", pathParam),
-//		autorest.WithQueryParameters(queryParam))
-//
-//	if err != nil {
-//		return nil, err
-//	}
-//
-//	a.logDebug("Send request to azure")
-//	resp, err := autorest.SendWithSender(groupClient.Client, req)
-//	if err != nil {
-//		return nil, err
-//	}
-//
-//	return resp, nil
-//}
-
+// GetVmSizes lists all available virtual machine sizes for a subscription in a location.
 func (a *AKSClient) GetVmSizes(location string) ([]string, error) {
 
 	client := compute.NewVirtualMachineSizesClient(a.azureSdk.ServicePrincipal.SubscriptionID)

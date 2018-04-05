@@ -1,11 +1,11 @@
 package client
 
 import (
-	"testing"
-	"github.com/sirupsen/logrus"
-	"reflect"
-	"os"
 	"github.com/banzaicloud/azure-aks-client/cluster"
+	"github.com/sirupsen/logrus"
+	"os"
+	"reflect"
+	"testing"
 )
 
 const (

@@ -1,10 +1,10 @@
 package cluster
 
 import (
-	"github.com/banzaicloud/banzai-types/constants"
-	"regexp"
 	"github.com/Azure/azure-sdk-for-go/services/containerservice/mgmt/2017-09-30/containerservice"
 	"github.com/banzaicloud/azure-aks-client/utils"
+	"github.com/banzaicloud/banzai-types/constants"
+	"regexp"
 )
 
 func GetManagedCluster(request *CreateClusterRequest, clientId string, secret string) *containerservice.ManagedCluster {
