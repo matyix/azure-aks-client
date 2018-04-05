@@ -1,27 +1,36 @@
-hash: 4285783a332906713d5882bfc1aaaa843227e7c7ee41b213ead058ce89515230
-updated: 2018-03-21T17:40:00.449247+01:00
+hash: 8e4603f6eecef91b49901353e6d8f27757af80031921c0d1721d7f5d381d0851
+updated: 2018-04-05T17:42:08.451277+02:00
 imports:
 - name: github.com/Azure/azure-sdk-for-go
-  version: 990842d1126ef6e294152c5f6f4e3f804a3cfd6d
+  version: 56332fec5b308fbb6615fa1af6117394cdba186d
   subpackages:
   - arm/examples/helpers
   - arm/resources/resources
+  - services/compute/mgmt/2018-04-01/compute
+  - services/containerservice/mgmt/2017-09-30/containerservice
+  - services/resources/mgmt/2016-06-01/subscriptions
+  - version
 - name: github.com/Azure/go-autorest
-  version: 809ed2ef5c4c9a60c3c2f3aa9cc11f3a7c2ce59d
+  version: 9ad9326b278af8fa5cc67c30c0ce9a58cc0862b2
   subpackages:
   - autorest
   - autorest/adal
   - autorest/azure
+  - autorest/azure/auth
   - autorest/date
   - autorest/to
   - autorest/validation
 - name: github.com/banzaicloud/banzai-types
-  version: ca12487c8b036a81f64279b989688d3e6dc8dc2b
+  version: e77541765bd6c4215993f7316d11c8ad72fd43e7
   subpackages:
   - components/azure
   - constants
 - name: github.com/dgrijalva/jwt-go
   version: 06ea1031745cb8b3dab3f6a236daf2b0aa468b7e
+- name: github.com/dimchansky/utfbom
+  version: 6c6132ff69f0f6c088739067407b5d32c52e1d0f
+- name: github.com/go-errors/errors
+  version: 3afebba5a48dbc89b574d890b6b34d9ee10b4785
 - name: github.com/pkg/errors
   version: 645ef00459ed84a119197bfb8d8205042c6df63d
 - name: github.com/sirupsen/logrus
@@ -29,6 +38,8 @@ imports:
 - name: golang.org/x/crypto
   version: 81e90905daefcd6fd217b62423c0908922eadb30
   subpackages:
+  - pkcs12
+  - pkcs12/internal/rc2
   - ssh/terminal
 - name: golang.org/x/sys
   version: 43eea11bc92608addb41b8a406b0407495c106f6
