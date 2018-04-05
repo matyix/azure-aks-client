@@ -12,6 +12,7 @@ import (
 	"fmt"
 	"encoding/json"
 	"net/http"
+	"github.com/Azure/azure-sdk-for-go/services/containerservice/mgmt/2017-09-30/containerservice"
 )
 
 const BaseUrl = "https://management.azure.com"
@@ -82,12 +83,7 @@ func (a *AKSClient) GetCluster(name string, resourceGroup string) (*banzaiTypesA
 
 	return &banzaiTypesAzure.ResponseWithValue{
 		StatusCode: managedCluster.StatusCode,
-		Value: banzaiTypesAzure.Value{
-			Id:         *managedCluster.ID,
-			Location:   *managedCluster.Location,
-			Name:       *managedCluster.Name,
-			Properties: banzaiTypesAzure.Properties{},
-		},
+		Value:      *convertManagedClusterToValue(&managedCluster),
 	}, nil
 }
 
@@ -126,7 +122,40 @@ func (a *AKSClient) GetCluster(name string, resourceGroup string) (*banzaiTypesA
 //// ListClusters is listing AKS clusters in the specified subscription and resource group
 ////
 //// GET https://management.azure.com/subscriptions/{subscriptionId}/resourceGroups/{resourceGroupName}/providers/Microsoft.ContainerService/managedClusters?api-version=2017-08-31
-//func (a *AKSClient) ListClusters(resourceGroup string) (*banzaiTypesAzure.ListResponse, error) {
+func (a *AKSClient) ListClusters(resourceGroup string) (*banzaiTypesAzure.ListResponse, error) {
+	a.logInfof("Start getting cluster list from %s resource group", resourceGroup)
+
+	list, err := a.azureSdk.ManagedClusterClient.List(context.Background())
+	if err != nil {
+		return nil, err
+	}
+
+	managedClusters := list.Values()
+
+	a.logInfo("Create response model")
+	response := banzaiTypesAzure.ListResponse{StatusCode: list.Response().StatusCode, Value: banzaiTypesAzure.Values{
+		Value: convertManagedClustersToValues(managedClusters),
+	}}
+	return &response, nil
+}
+
+func convertManagedClustersToValues(managedCluster []containerservice.ManagedCluster) []banzaiTypesAzure.Value {
+	var values []banzaiTypesAzure.Value
+	for _, mc := range managedCluster {
+		values = append(values, *convertManagedClusterToValue(&mc))
+	}
+	return values
+}
+
+func convertManagedClusterToValue(managedCluster *containerservice.ManagedCluster) *banzaiTypesAzure.Value {
+	return &banzaiTypesAzure.Value{
+		Id:         *managedCluster.ID,
+		Location:   *managedCluster.Location,
+		Name:       *managedCluster.Name,
+		Properties: banzaiTypesAzure.Properties{},
+	}
+}
+
 //
 //	a.logInfof("Start getting cluster list from %s resource group", resourceGroup)
 //
