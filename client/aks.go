@@ -2,6 +2,7 @@ package client
 
 import (
 	banzaiTypesAzure "github.com/banzaicloud/banzai-types/components/azure"
+	banzaiConstants "github.com/banzaicloud/banzai-types/constants"
 	"github.com/banzaicloud/azure-aks-client/cluster"
 	"github.com/banzaicloud/azure-aks-client/utils"
 	"github.com/sirupsen/logrus"
@@ -13,6 +14,7 @@ import (
 	"encoding/json"
 	"net/http"
 	"github.com/Azure/azure-sdk-for-go/services/containerservice/mgmt/2017-09-30/containerservice"
+	"time"
 )
 
 const BaseUrl = "https://management.azure.com"
@@ -372,82 +374,55 @@ func (a *AKSClient) CreateUpdateCluster(request *cluster.CreateClusterRequest) (
 ////PollingCluster polling AKS on Azure
 ////
 ////GET https://management.azure.com/subscriptions/{subscriptionId}/resourceGroups/{resourceGroupName}/providers/Microsoft.ContainerService/managedClusters/{resourceName}?api-version=2017-08-31
-//func (a *AKSClient) PollingCluster(name string, resourceGroup string) (*banzaiTypesAzure.ResponseWithValue, error) {
-//
-//	const stageSuccess = "Succeeded"
-//	const stageFailed = "Failed"
-//	const waitInSeconds = 10
-//
-//	a.logInfof("Start polling cluster: %s [%s]", name, resourceGroup)
-//
-//	pathParam := map[string]interface{}{
-//		"subscription-id": a.azureSdk.ServicePrincipal.SubscriptionID,
-//		"resourceGroup":   resourceGroup,
-//		"resourceName":    name}
-//	queryParam := map[string]interface{}{"api-version": "2017-08-31"}
-//
-//	groupClient := *a.azureSdk.GroupsClient
-//
-//	a.logDebug("Create http request")
-//	req, err := autorest.Prepare(&http.Request{},
-//		groupClient.WithAuthorization(),
-//		autorest.AsGet(),
-//		autorest.WithBaseURL(BaseUrl),
-//		autorest.WithPathParameters("/subscriptions/{subscription-id}/resourceGroups/{resourceGroup}/providers/Microsoft.ContainerService/managedClusters/{resourceName}", pathParam),
-//		autorest.WithQueryParameters(queryParam),
-//	)
-//
-//	if err != nil {
-//		return nil, err
-//	}
-//
-//	a.logDebug("Start loop")
-//
-//	result := banzaiTypesAzure.ResponseWithValue{}
-//	for isReady := false; !isReady; {
-//
-//		a.logDebug("Send request to azure")
-//		resp, err := autorest.SendWithSender(groupClient.Client, req)
-//		if err != nil {
-//			return nil, err
-//		}
-//
-//		statusCode := resp.StatusCode
-//		a.logInfof("Cluster polling status code: %d", statusCode)
-//
-//		a.logDebug("Read response body")
-//		value, err := ioutil.ReadAll(resp.Body)
-//		if err != nil {
-//			return nil, err
-//		}
-//
-//		switch statusCode {
-//		case http.StatusOK:
-//			response := banzaiTypesAzure.Value{}
-//			json.Unmarshal([]byte(value), &response)
-//
-//			stage := response.Properties.ProvisioningState
-//			a.logInfof("Cluster stage is %s", stage)
-//
-//			switch stage {
-//			case stageSuccess:
-//				isReady = true
-//				result.Update(http.StatusCreated, response)
-//			case stageFailed:
-//				return nil, banzaiConstants.ErrorAzureCLusterStageFailed
-//			default:
-//				a.logInfo("Waiting for cluster ready...")
-//				time.Sleep(waitInSeconds * time.Second)
-//			}
-//
-//		default:
-//			err := utils.CreateErrorFromValue(resp.StatusCode, value)
-//			return nil, err
-//		}
-//	}
-//
-//	return &result, nil
-//}
+func (a *AKSClient) PollingCluster(name string, resourceGroup string) (*banzaiTypesAzure.ResponseWithValue, error) {
+	const stageSuccess = "Succeeded"
+	const stageFailed = "Failed"
+	const waitInSeconds = 10
+
+	a.logInfof("Start polling cluster: %s [%s]", name, resourceGroup)
+
+	a.logDebug("Start loop")
+
+	result := banzaiTypesAzure.ResponseWithValue{}
+	for isReady := false; !isReady; {
+
+		a.logDebug("Send request to azure")
+		managedCluster, err := a.azureSdk.ManagedClusterClient.Get(context.Background(), resourceGroup, name)
+		if err != nil {
+			return nil, err
+		}
+
+		statusCode := managedCluster.StatusCode
+		a.logInfof("Cluster polling status code: %d", statusCode)
+
+		convertManagedClusterToValue(&managedCluster)
+
+		switch statusCode {
+		case http.StatusOK:
+			response := convertManagedClusterToValue(&managedCluster)
+
+			stage := *managedCluster.ProvisioningState
+			a.logInfof("Cluster stage is %s", stage)
+
+			switch stage {
+			case stageSuccess:
+				isReady = true
+				result.Update(http.StatusCreated, *response)
+			case stageFailed:
+				return nil, banzaiConstants.ErrorAzureCLusterStageFailed
+			default:
+				a.logInfo("Waiting for cluster ready...")
+				time.Sleep(waitInSeconds * time.Second)
+			}
+
+		default:
+			return nil, errors.New("status code is not OK")
+		}
+	}
+
+	return &result, nil
+}
+
 //
 ////Get kubernetes cluster config
 ////
