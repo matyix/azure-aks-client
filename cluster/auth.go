@@ -25,10 +25,11 @@ type AKSCredential struct {
 }
 
 type Sdk struct {
-	ServicePrincipal     *ServicePrincipal
-	ManagedClusterClient *containerservice.ManagedClustersClient
-	VMSizeClient         *compute.VirtualMachineSizesClient
-	SubscriptionsClient  *subscriptions.Client
+	ServicePrincipal        *ServicePrincipal
+	ManagedClusterClient    *containerservice.ManagedClustersClient
+	VMSizeClient            *compute.VirtualMachineSizesClient
+	SubscriptionsClient     *subscriptions.Client
+	ContainerServicesClient *containerservice.ContainerServicesClient
 }
 
 type ServicePrincipal struct {
@@ -97,14 +98,17 @@ func Authenticate(credentials *AKSCredential) (*Sdk, error) {
 	managedClusterClient := containerservice.NewManagedClustersClient(subscriptionId)
 	vmSizesClient := compute.NewVirtualMachineSizesClient(subscriptionId)
 	subscriptionsClient := subscriptions.NewClient()
+	containerServicesClient := containerservice.NewContainerServicesClient(subscriptionId)
 
 	managedClusterClient.Authorizer = authorizer
 	vmSizesClient.Authorizer = authorizer
 	subscriptionsClient.Authorizer = authorizer
+	containerServicesClient.Authorizer = authorizer
 
 	sdk.ManagedClusterClient = &managedClusterClient
 	sdk.VMSizeClient = &vmSizesClient
 	sdk.SubscriptionsClient = &subscriptionsClient
+	sdk.ContainerServicesClient = &containerServicesClient
 
 	return &sdk, nil
 }

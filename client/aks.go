@@ -4,6 +4,7 @@ import (
 	"context"
 	"encoding/json"
 	"fmt"
+	"github.com/Azure/azure-sdk-for-go/services/compute/mgmt/2018-04-01/compute"
 	"github.com/Azure/azure-sdk-for-go/services/containerservice/mgmt/2017-09-30/containerservice"
 	"github.com/banzaicloud/azure-aks-client/cluster"
 	"github.com/banzaicloud/azure-aks-client/utils"
@@ -295,6 +296,23 @@ func (a *AKSClient) GetLocations() ([]string, error) {
 	}
 
 	return locations, nil
+}
+
+// GetKubernetesVersions returns a list of supported kubernetes version in the specified subscription
+func (a *AKSClient) GetKubernetesVersions(location string) ([]string, error) {
+
+	a.logInfo("Start listing Kubernetes versions")
+	resp, err := a.azureSdk.ContainerServicesClient.ListOrchestrators(context.Background(), location, string(compute.Kubernetes))
+	if err != nil {
+		return nil, err
+	}
+
+	var versions []string
+	for _, v := range *resp.OrchestratorVersionProfileProperties.Orchestrators {
+		versions = append(versions, *v.OrchestratorVersion)
+	}
+
+	return versions, nil
 }
 
 func (a *AKSClient) logDebug(args ...interface{}) {
