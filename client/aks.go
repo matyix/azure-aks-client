@@ -69,7 +69,28 @@ func getDefaultLogger() *logrus.Logger {
 //// GetCluster gets the details of the managed cluster with a specified resource group and name.
 ////
 //// GET https://management.azure.com/subscriptions/{subscriptionId}/resourceGroups/{resourceGroupName}/providers/Microsoft.ContainerService/managedClusters/{resourceName}?api-version=2017-08-31
-//func (a *AKSClient) GetCluster(name string, resourceGroup string) (*banzaiTypesAzure.ResponseWithValue, error) {
+func (a *AKSClient) GetCluster(name string, resourceGroup string) (*banzaiTypesAzure.ResponseWithValue, error) {
+
+	a.logInfof("Start getting aks cluster: %s [%s]", name, resourceGroup)
+
+	managedCluster, err := a.azureSdk.ManagedClusterClient.Get(context.Background(), resourceGroup, name)
+	if err != nil {
+		return nil, err
+	}
+
+	a.logInfof("Status code: %d", managedCluster.StatusCode)
+
+	return &banzaiTypesAzure.ResponseWithValue{
+		StatusCode: managedCluster.StatusCode,
+		Value: banzaiTypesAzure.Value{
+			Id:         *managedCluster.ID,
+			Location:   *managedCluster.Location,
+			Name:       *managedCluster.Name,
+			Properties: banzaiTypesAzure.Properties{},
+		},
+	}, nil
+}
+
 //
 //	a.logInfof("Start getting aks cluster: %s [%s]", name, resourceGroup)
 //
