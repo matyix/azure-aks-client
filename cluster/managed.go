@@ -24,7 +24,7 @@ func GetManagedCluster(request *CreateClusterRequest, clientId string, secret st
 			KubernetesVersion: &request.KubernetesVersion,
 			AgentPoolProfiles: &agentPoolProfiles,
 			LinuxProfile: &containerservice.LinuxProfile{
-				AdminUsername: utils.S("erospista"),
+				AdminUsername: utils.S("pipeline"),
 				SSH: &containerservice.SSHConfiguration{
 					PublicKeys: &[]containerservice.SSHPublicKey{
 						{
