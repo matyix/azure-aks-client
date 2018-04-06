@@ -1,26 +1,22 @@
 package client
 
 import (
-	"encoding/json"
 	"errors"
-	"fmt"
 	"github.com/Azure/azure-sdk-for-go/services/compute/mgmt/2018-04-01/compute"
 	"github.com/Azure/azure-sdk-for-go/services/containerservice/mgmt/2017-09-30/containerservice"
 	"github.com/Azure/azure-sdk-for-go/services/resources/mgmt/2016-06-01/subscriptions"
 	"github.com/banzaicloud/azure-aks-client/cluster"
-	"github.com/banzaicloud/azure-aks-client/utils"
 	"github.com/banzaicloud/banzai-types/components/azure"
 	"github.com/banzaicloud/banzai-types/constants"
-	"io/ioutil"
 	"net/http"
 	"time"
 )
 
 type ClusterManager interface {
-	CreateOrUpdate(request *cluster.CreateClusterRequest, managedCluster *containerservice.ManagedCluster) (containerservice.ManagedClustersCreateOrUpdateFuture, error)
-	Delete(resourceGroup, name string) (containerservice.ManagedClustersDeleteFuture, error)
+	CreateOrUpdate(request *cluster.CreateClusterRequest, managedCluster *containerservice.ManagedCluster) (*containerservice.ManagedCluster, error)
+	Delete(resourceGroup, name string) (*http.Response, error)
 	Get(resourceGroup, name string) (containerservice.ManagedCluster, error)
-	List() (containerservice.ManagedClusterListResultPage, error)
+	List() ([]containerservice.ManagedCluster, error)
 	GetAccessProfiles(resourceGroup, name, roleName string) (containerservice.ManagedClusterAccessProfile, error)
 	ListLocations() (subscriptions.LocationListResult, error)
 	ListVmSizes(location string) (result compute.VirtualMachineSizeListResult, err error)
@@ -29,18 +25,18 @@ type ClusterManager interface {
 	GetClientId() string
 	GetClientSecret() string
 
-	logDebug(args ...interface{})
-	logInfo(args ...interface{})
-	logWarn(args ...interface{})
-	logError(args ...interface{})
-	logFatal(args ...interface{})
-	logPanic(args ...interface{})
-	logDebugf(format string, args ...interface{})
-	logInfof(format string, args ...interface{})
-	logWarnf(format string, args ...interface{})
-	logErrorf(format string, args ...interface{})
-	logFatalf(format string, args ...interface{})
-	logPanicf(format string, args ...interface{})
+	LogDebug(args ...interface{})
+	LogInfo(args ...interface{})
+	LogWarn(args ...interface{})
+	LogError(args ...interface{})
+	LogFatal(args ...interface{})
+	LogPanic(args ...interface{})
+	LogDebugf(format string, args ...interface{})
+	LogInfof(format string, args ...interface{})
+	LogWarnf(format string, args ...interface{})
+	LogErrorf(format string, args ...interface{})
+	LogFatalf(format string, args ...interface{})
+	LogPanicf(format string, args ...interface{})
 }
 
 // CreateUpdateCluster creates or updates a managed cluster with the specified configuration for agents and Kubernetes
@@ -51,62 +47,43 @@ func CreateUpdateCluster(manager ClusterManager, request *cluster.CreateClusterR
 		return nil, errors.New("Empty request")
 	}
 
-	manager.logInfo("Start create/update cluster")
-	manager.logDebugf("CreateRequest: %v", request)
-	manager.logInfo("Validate cluster create/update request")
+	manager.LogInfo("Start create/update cluster")
+	manager.LogDebugf("CreateRequest: %v", request)
+	manager.LogInfo("Validate cluster create/update request")
 
 	if err := request.Validate(); err != nil {
 		return nil, err
 	}
-	manager.logInfo("Validate passed")
+	manager.LogInfo("Validate passed")
 
 	managedCluster := cluster.GetManagedCluster(request, manager.GetClientId(), manager.GetClientSecret())
-	manager.logDebugf("Created managed cluster model - %#v", &managedCluster)
-	manager.logDebug("Send request to azure")
+	manager.LogDebugf("Created managed cluster model - %#v", &managedCluster)
+	manager.LogDebug("Send request to azure")
 	result, err := manager.CreateOrUpdate(request, managedCluster)
 	if err != nil {
 		return nil, err
 	}
 
-	resp := result.Response()
-
-	manager.logDebugf("Read response body: %v", resp.Body)
-	value, err := ioutil.ReadAll(resp.Body)
-	if err != nil {
-		msg := fmt.Sprint("error during cluster creation:", err)
-		return nil, utils.NewErr(msg)
-	}
-
-	manager.logInfof("Status code: %d", resp.StatusCode)
-	if resp.StatusCode != http.StatusOK && resp.StatusCode != http.StatusCreated {
-		// something went wrong, create failed
-		errResp := utils.CreateErrorFromValue(resp.StatusCode, value)
-		return nil, errResp
-	}
-
-	manager.logInfo("Create response model")
-	v := azure.Value{}
-	json.Unmarshal([]byte(value), &v)
+	manager.LogInfo("Create response model")
 
 	return &azure.ResponseWithValue{
-		StatusCode: resp.StatusCode,
-		Value:      v,
+		StatusCode: result.Response.StatusCode,
+		Value:      *convertManagedClusterToValue(result),
 	}, nil
 
 }
 
-// todo test
 // DeleteCluster deletes the managed cluster with a specified resource group and name.
 func DeleteCluster(manager ClusterManager, name string, resourceGroup string) error {
-	manager.logInfof("Start deleting cluster %s in %s resource group", name, resourceGroup)
-	manager.logDebug("Send request to azure")
+	manager.LogInfof("Start deleting cluster %s in %s resource group", name, resourceGroup)
+	manager.LogDebug("Send request to azure")
 
 	response, err := manager.Delete(resourceGroup, name)
 	if err != nil {
 		return err
 	}
 
-	manager.logInfof("Status code: %d", response.Response().StatusCode)
+	manager.LogInfof("Status code: %d", response.StatusCode)
 
 	return nil
 }
@@ -117,21 +94,21 @@ func PollingCluster(manager ClusterManager, name string, resourceGroup string) (
 	const stageFailed = "Failed"
 	const waitInSeconds = 10
 
-	manager.logInfof("Start polling cluster: %s [%s]", name, resourceGroup)
+	manager.LogInfof("Start polling cluster: %s [%s]", name, resourceGroup)
 
-	manager.logDebug("Start loop")
+	manager.LogDebug("Start loop")
 
 	result := azure.ResponseWithValue{}
 	for isReady := false; !isReady; {
 
-		manager.logDebug("Send request to azure")
+		manager.LogDebug("Send request to azure")
 		managedCluster, err := manager.Get(resourceGroup, name)
 		if err != nil {
 			return nil, err
 		}
 
 		statusCode := managedCluster.StatusCode
-		manager.logInfof("Cluster polling status code: %d", statusCode)
+		manager.LogInfof("Cluster polling status code: %d", statusCode)
 
 		convertManagedClusterToValue(&managedCluster)
 
@@ -140,7 +117,7 @@ func PollingCluster(manager ClusterManager, name string, resourceGroup string) (
 			response := convertManagedClusterToValue(&managedCluster)
 
 			stage := *managedCluster.ProvisioningState
-			manager.logInfof("Cluster stage is %s", stage)
+			manager.LogInfof("Cluster stage is %s", stage)
 
 			switch stage {
 			case stageSuccess:
@@ -149,7 +126,7 @@ func PollingCluster(manager ClusterManager, name string, resourceGroup string) (
 			case stageFailed:
 				return nil, constants.ErrorAzureCLusterStageFailed
 			default:
-				manager.logInfo("Waiting for cluster ready...")
+				manager.LogInfo("Waiting for cluster ready...")
 				time.Sleep(waitInSeconds * time.Second)
 			}
 
@@ -164,14 +141,14 @@ func PollingCluster(manager ClusterManager, name string, resourceGroup string) (
 // GetCluster gets the details of the managed cluster with a specified resource group and name.
 func GetCluster(manager ClusterManager, name string, resourceGroup string) (*azure.ResponseWithValue, error) {
 
-	manager.logInfof("Start getting aks cluster: %s [%s]", name, resourceGroup)
+	manager.LogInfof("Start getting aks cluster: %s [%s]", name, resourceGroup)
 
 	managedCluster, err := manager.Get(resourceGroup, name)
 	if err != nil {
 		return nil, err
 	}
 
-	manager.logInfof("Status code: %d", managedCluster.StatusCode)
+	manager.LogInfof("Status code: %d", managedCluster.StatusCode)
 
 	return &azure.ResponseWithValue{
 		StatusCode: managedCluster.StatusCode,
@@ -182,17 +159,15 @@ func GetCluster(manager ClusterManager, name string, resourceGroup string) (*azu
 // ListClusters gets a list of managed clusters in the specified subscription. The operation returns properties of each managed
 // cluster.
 func ListClusters(manager ClusterManager) (*azure.ListResponse, error) {
-	manager.logInfo("Start listing clusters")
+	manager.LogInfo("Start listing clusters")
 
-	list, err := manager.List()
+	managedClusters, err := manager.List()
 	if err != nil {
 		return nil, err
 	}
 
-	managedClusters := list.Values()
-
-	manager.logInfo("Create response model")
-	response := azure.ListResponse{StatusCode: list.Response().StatusCode, Value: azure.Values{
+	manager.LogInfo("Create response model")
+	response := azure.ListResponse{StatusCode: http.StatusOK, Value: azure.Values{
 		Value: convertManagedClustersToValues(managedClusters),
 	}}
 	return &response, nil
@@ -201,16 +176,16 @@ func ListClusters(manager ClusterManager) (*azure.ListResponse, error) {
 // GetClusterConfig gets the given cluster kubeconfig
 func GetClusterConfig(manager ClusterManager, name, resourceGroup, roleName string) (*azure.Config, error) {
 
-	manager.logInfof("Start getting %s cluster's config in %s, role name: %s", name, resourceGroup, roleName)
+	manager.LogInfof("Start getting %s cluster's config in %s, role name: %s", name, resourceGroup, roleName)
 
-	manager.logDebug("Send request to azure")
+	manager.LogDebug("Send request to azure")
 	profile, err := manager.GetAccessProfiles(resourceGroup, name, roleName)
 	if err != nil {
 		return nil, err
 	}
 
-	manager.logInfof("Status code: %d", profile.StatusCode)
-	manager.logInfo("Create response model")
+	manager.LogInfof("Status code: %d", profile.StatusCode)
+	manager.LogInfo("Create response model")
 	return &azure.Config{
 		Location: *profile.Location,
 		Name:     *profile.Name,
@@ -225,7 +200,7 @@ func GetClusterConfig(manager ClusterManager, name, resourceGroup, roleName stri
 // GetLocations returns all the locations that are available for resource providers
 func GetLocations(manager ClusterManager) ([]string, error) {
 
-	manager.logInfo("Start listing locations")
+	manager.LogInfo("Start listing locations")
 	resp, err := manager.ListLocations()
 	if err != nil {
 		return nil, err
@@ -242,7 +217,7 @@ func GetLocations(manager ClusterManager) ([]string, error) {
 // GetVmSizes lists all available virtual machine sizes for a subscription in a location.
 func GetVmSizes(manager ClusterManager, location string) ([]string, error) {
 
-	manager.logInfo("Start listing vm sizes")
+	manager.LogInfo("Start listing vm sizes")
 	resp, err := manager.ListVmSizes(location)
 	if err != nil {
 		return nil, err
@@ -258,7 +233,7 @@ func GetVmSizes(manager ClusterManager, location string) ([]string, error) {
 // GetKubernetesVersions returns a list of supported kubernetes version in the specified subscription
 func GetKubernetesVersions(manager ClusterManager, location string) ([]string, error) {
 
-	manager.logInfo("Start listing Kubernetes versions")
+	manager.LogInfo("Start listing Kubernetes versions")
 	resp, err := manager.ListVersions(location, string(compute.Kubernetes))
 	if err != nil {
 		return nil, err
@@ -283,10 +258,25 @@ func convertManagedClustersToValues(managedCluster []containerservice.ManagedClu
 
 // convertManagedClusterToValue returns Value with the ManagedCluster properties
 func convertManagedClusterToValue(managedCluster *containerservice.ManagedCluster) *azure.Value {
+
+	var profiles []azure.Profile
+	if managedCluster.AgentPoolProfiles != nil {
+		for _, p := range *managedCluster.AgentPoolProfiles {
+			profiles = append(profiles, azure.Profile{
+				Name:  *p.Name,
+				Count: int(*p.Count),
+			})
+		}
+	}
+
 	return &azure.Value{
-		Id:         *managedCluster.ID,
-		Location:   *managedCluster.Location,
-		Name:       *managedCluster.Name,
-		Properties: azure.Properties{},
+		Id:       *managedCluster.ID,
+		Location: *managedCluster.Location,
+		Name:     *managedCluster.Name,
+		Properties: azure.Properties{
+			ProvisioningState: *managedCluster.ProvisioningState,
+			AgentPoolProfiles: profiles,
+			Fqdn:              *managedCluster.Fqdn,
+		},
 	}
 }
