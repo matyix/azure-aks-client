@@ -5,13 +5,10 @@ version: 2
 jobs:
   build:
     docker:
-      - image: circleci/golang:1.9
-      
+      - image: circleci/golang:1.10
    
     working_directory: /go/src/github.com/banzaicloud/azure-aks-client 
     steps:
       - checkout
-
-      # specify any bash command here prefixed with `run: `
       - run: go get -v -t -d ./...
       - run: go test -v ./...
